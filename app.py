@@ -1,533 +1,399 @@
 import streamlit as st
-import joblib
-import numpy as np
 import pandas as pd
+import numpy as np
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from sklearn.metrics import accuracy_score
-from collections import Counter
 
-# ========== Page Config ==========
+# ============================================
+# 🎨 Page Configuration
+# ============================================
+
 st.set_page_config(
-    page_title="AI Grade Predictor - All Models",
-    page_icon="🎓",
+    page_title="ML Prediction App",
+    page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# ========== Custom CSS ==========
+# Custom CSS - Simple & Beautiful
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-    
-    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-    
-    #MainMenu, footer, header { visibility: hidden !important; }
-    
-    .stApp { background: #0f172a !important; min-height: 100vh; }
-    
-    /* Header */
-    .header-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 3rem 2rem;
-        border-radius: 0 0 40px 40px;
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-        margin-bottom: 2rem;
-        text-align: center;
+    .main {
+        background-color: #fafafa;
     }
-    .header-section h1 {
-        color: #ffffff !important;
-        font-size: 3.2rem;
-        font-weight: 900;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .header-section p {
-        color: #ffffff !important;
-        font-size: 1.2rem;
-        margin-top: 0.5rem;
-        font-weight: 400;
-    }
-    
-    /* Main wrapper */
-    .main-wrapper { max-width: 1400px; margin: 0 auto; padding: 0 2rem 3rem 2rem; }
-    
-    /* Cards */
-    .card {
-        background: #ffffff !important;
-        border-radius: 24px;
-        padding: 2.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        border: 2px solid #e2e8f0;
-    }
-    
-    .section-title-dark {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: #0f172a !important;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 4px solid #667eea;
-    }
-    
-    /* Metric items */
-    .metric-item {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff !important;
-        padding: 2rem 1.5rem;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        transition: transform 0.3s ease;
-        height: 100%;
-    }
-    .metric-item:hover { transform: translateY(-5px); }
-    .metric-value { font-size: 3rem; font-weight: 900; color: #ffffff !important; margin-bottom: 0.5rem; }
-    .metric-label { font-size: 1rem; font-weight: 600; color: #ffffff !important; }
-    
-    /* Input section */
-    .input-section {
-        background: #f1f5f9 !important;
-        padding: 2rem;
-        border-radius: 20px;
-        margin: 1.5rem 0;
-        border: 2px solid #cbd5e1;
-    }
-    .input-section h3 { color: #0f172a !important; font-weight: 700; font-size: 1.3rem; margin-bottom: 1rem; }
-    
-    .stNumberInput label { color: #0f172a !important; font-weight: 600; font-size: 1rem; }
-    .stNumberInput input[type="number"] {
-        background: #ffffff !important;
-        color: #0f172a !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        border: 2px solid #94a3b8 !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-    }
-    .stSelectbox label { color: #0f172a !important; font-weight: 600; font-size: 1rem; }
-    .stSelectbox > div > div {
-        background: #ffffff !important;
-        color: #0f172a !important;
-        border: 2px solid #94a3b8 !important;
-        border-radius: 12px !important;
-    }
-    .stSelectbox > div > div > div { color: #0f172a !important; font-weight: 600; }
-    
-    /* Button */
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: #ffffff !important;
+    .stButton>button {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        color: white;
         border: none;
-        border-radius: 16px;
-        padding: 1.2rem 3rem;
-        font-size: 1.3rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        width: 100%;
-    }
-    .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
-    }
-    
-    /* Result cards */
-    .result-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .model-result-card {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        border-left: 6px solid #667eea;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
-    }
-    .model-result-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .model-name {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #0f172a !important;
-        margin-bottom: 0.5rem;
-    }
-    
-    .model-prediction {
-        font-size: 3rem;
-        font-weight: 900;
-        color: #667eea !important;
-        margin: 1rem 0;
-        text-align: center;
-    }
-    
-    .model-confidence {
-        font-size: 0.95rem;
+        border-radius: 8px;
+        padding: 10px 24px;
         font-weight: 600;
-        color: #475569 !important;
-        text-align: center;
+        transition: all 0.3s;
     }
-    
-    .model-accuracy {
-        background: #667eea;
-        color: #ffffff !important;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        display: inline-block;
-        margin-top: 0.5rem;
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
-    
-    /* Final result box */
-    .final-result {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        border-radius: 24px;
-        padding: 3rem;
-        text-align: center;
-        margin: 2rem 0;
-        box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+    .metric-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-left: 4px solid #667eea;
     }
-    .final-result-label { color: #ffffff !important; font-size: 1.2rem; font-weight: 600; }
-    .final-result-grade {
-        color: #ffffff !important;
-        font-size: 7rem;
-        font-weight: 900;
-        line-height: 1;
-        margin: 1rem 0;
-        text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-    }
-    .final-result-detail { color: #ffffff !important; font-size: 1.1rem; font-weight: 500; }
-    
-    /* Comparison chart */
-    .chart-container {
-        background: #ffffff !important;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-top: 2rem;
-        border: 2px solid #e2e8f0;
-    }
-    
-    details {
-        background: #ffffff !important;
-        border-radius: 16px;
-        padding: 1rem;
-        margin: 1rem 0;
-        border: 2px solid #e2e8f0;
-    }
-    summary { color: #0f172a !important; font-weight: 700; font-size: 1.1rem; }
-    
-    @media (max-width: 768px) {
-        .header-section h1 { font-size: 2.2rem; }
-        .final-result-grade { font-size: 4rem; }
-        .card { padding: 1.5rem; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; }
+    .sidebar .sidebar-content {
+        background-color: #2c3e50;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ========== Load Models ==========
+# ============================================
+#  Load Models
+# ============================================
+
 @st.cache_resource
-def load_all():
-    models_path = 'models'
-    if not os.path.exists(models_path):
-        return None, None, None
-    
+def load_all_models():
+    """โหลดโมเดลทั้งหมดจากโฟลเดอร์ models/"""
     models = {}
-    for f in os.listdir(models_path):
-        if f.endswith('.pkl') and f not in ['scaler.pkl', 'test_data.pkl']:
-            name = f.replace('_', ' ').replace('.pkl', '')
-            models[name] = joblib.load(os.path.join(models_path, f))
+    model_dir = 'models'
     
-    scaler = joblib.load(os.path.join(models_path, 'scaler.pkl'))
-    test_data = joblib.load(os.path.join(models_path, 'test_data.pkl'))
+    if not os.path.exists(model_dir):
+        return None
     
-    return models, scaler, test_data
-
-models, scaler, test_data = load_all()
-
-if models is None or not models or test_data is None:
-    st.error("⚠️ เกิดข้อผิดพลาดในการโหลดโมเดล")
-    st.stop()
-
-feature_names = test_data['feature_names']
-target_names = test_data['target_names']
-
-# คำนวณ accuracy ของแต่ละโมเดล
-model_accuracies = {}
-for name, model in models.items():
-    if name != 'K-Means':
-        y_pred = model.predict(test_data['X_test'])
-        model_accuracies[name] = accuracy_score(test_data['y_test'], y_pred)
-
-# ========== Header ==========
-st.markdown("""
-<div class="header-section">
-    <h1>🎓 AI Grade Predictor</h1>
-    <p>ระบบทำนายเกรดนักเรียนด้วย Machine Learning - เปรียบเทียบทุกโมเดล</p>
-</div>
-""", unsafe_allow_html=True)
-
-# ========== Main Content ==========
-st.markdown('<div class="main-wrapper">', unsafe_allow_html=True)
-
-# ========== Quick Stats ==========
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title-dark"> ข้อมูลระบบ</div>', unsafe_allow_html=True)
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.markdown(f"""
-    <div class="metric-item">
-        <div class="metric-value">{len(models)}</div>
-        <div class="metric-label">โมเดล AI</div>
-    </div>
-    """, unsafe_allow_html=True)
-with col2:
-    st.markdown(f"""
-    <div class="metric-item">
-        <div class="metric-value">{len(feature_names)}</div>
-        <div class="metric-label">Features</div>
-    </div>
-    """, unsafe_allow_html=True)
-with col3:
-    st.markdown(f"""
-    <div class="metric-item">
-        <div class="metric-value">{len(target_names)}</div>
-        <div class="metric-label">เกรด</div>
-    </div>
-    """, unsafe_allow_html=True)
-with col4:
-    best_acc = max(model_accuracies.values()) if model_accuracies else 0
-    st.markdown(f"""
-    <div class="metric-item">
-        <div class="metric-value">{best_acc*100:.0f}%</div>
-        <div class="metric-label">ความแม่นยำสูงสุด</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ========== Prediction Form ==========
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title-dark">🔮 กรอกข้อมูลเพื่อทำนาย</div>', unsafe_allow_html=True)
-
-# แยก features
-numeric_features = [f for f in feature_names if '_' not in f]
-categorical_features = {}
-for feat in feature_names:
-    if '_' in feat:
-        base, val = feat.rsplit('_', 1)
-        if base not in categorical_features:
-            categorical_features[base] = []
-        categorical_features[base].append(val)
-
-with st.form("prediction_form", clear_on_submit=False):
-    st.markdown('<div class="input-section">', unsafe_allow_html=True)
-    st.markdown("###  ข้อมูลการเรียน")
+    files_to_load = {
+        'knn': 'knn_model.pkl',
+        'dt': 'decision_tree_model.pkl',
+        'svm': 'svm_model.pkl',
+        'rf': 'random_forest_model.pkl',
+        'lr': 'linear_regression_model.pkl',
+        'kmeans': 'kmeans_model.pkl',
+        'scaler': 'scaler.pkl',
+        'info': 'model_info.pkl',
+        'le': 'label_encoder.pkl'
+    }
     
-    inputs = {}
-    cols = st.columns(2)
-    for i, feat in enumerate(numeric_features):
-        with cols[i % 2]:
-            mean_val = float(np.mean(test_data['X_test'][:, feature_names.index(feat)]))
-            default_val = round(mean_val, 1)
-            inputs[feat] = st.number_input(
-                f"{feat.replace('_', ' ').title()}",
-                value=default_val,
-                step=0.5,
-                format="%.1f",
-                key=f"num_{feat}"
-            )
+    for key, filename in files_to_load.items():
+        path = os.path.join(model_dir, filename)
+        if os.path.exists(path):
+            models[key] = joblib.load(path)
     
-    if categorical_features:
-        st.markdown("### 🏷️ ข้อมูลเพิ่มเติม")
-        cat_cols = st.columns(2)
-        for i, (base_name, categories) in enumerate(categorical_features.items()):
-            with cat_cols[i % 2]:
-                options = categories if categories else ['Yes', 'No']
-                inputs[base_name] = st.selectbox(
-                    base_name.replace('_', ' ').title(),
-                    options,
-                    index=0,
-                    key=f"cat_{base_name}"
-                )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    submitted = st.form_submit_button("🚀 ทำนายด้วยทุกโมเดล", use_container_width=True)
+    return models if len(models) > 0 else None
 
-# ========== Results ==========
-if submitted:
-    # Prepare input
-    input_df = pd.DataFrame([inputs])
-    input_df = pd.get_dummies(input_df, drop_first=True)
-    input_df = input_df.reindex(columns=feature_names, fill_value=0)
-    input_scaled = scaler.transform(input_df)
+models = load_all_models()
+
+# ============================================
+#  Sidebar
+# ============================================
+
+st.sidebar.title("🤖 ML Prediction App")
+st.sidebar.markdown("---")
+
+if models:
+    app_mode = st.sidebar.radio(
+        "เลือกโมเดล",
+        ["📊 Dashboard", "🎯 KNN", " Decision Tree", 
+         "⚡ SVM", "🌲 Random Forest", "📈 Regression", "🔵 K-Means"]
+    )
+else:
+    st.sidebar.error("⚠️ ไม่พบไฟล์โมเดล")
+    st.sidebar.info("📁 วางไฟล์ .pkl ทั้งหมดในโฟลเดอร์ `models/`")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📤 อัพโหลดไฟล์ Excel")
+uploaded_file = st.sidebar.file_uploader(
+    "เลือกไฟล์ .xlsx หรือ .csv",
+    type=['xlsx', 'xls', 'csv']
+)
+
+# ============================================
+# 📊 Dashboard
+# ============================================
+
+if app_mode == "📊 Dashboard":
+    st.title("📊 Machine Learning Dashboard")
+    st.markdown("### ภาพรวมประสิทธิภาพของโมเดล")
     
-    # Predict with ALL models
-    predictions = {}
-    confidences = {}
-    
-    for name, model in models.items():
-        pred = model.predict(input_scaled)[0]
-        predictions[name] = pred
+    if models and 'info' in models:
+        info = models['info']
         
-        # Get confidence/probability
-        if hasattr(model, 'predict_proba'):
-            proba = model.predict_proba(input_scaled)[0]
-            confidences[name] = float(proba[pred])
-        else:
-            confidences[name] = None
-    
-    # ========== FINAL RESULT (Majority Vote) ==========
-    # นับว่าแต่ละ grade ได้กี่โหวต (ไม่รวม K-Means เพราะเป็น clustering)
-    vote_counter = Counter()
-    for name, pred in predictions.items():
-        if name != 'K-Means':
-            pred_label = target_names[int(pred)] if int(pred) < len(target_names) else str(pred)
-            vote_counter[pred_label] += 1
-    
-    final_grade = vote_counter.most_common(1)[0][0]
-    final_votes = vote_counter.most_common(1)[0][1]
-    total_models = len([n for n in models.keys() if n != 'K-Means'])
-    
-    st.markdown(f"""
-    <div class="final-result">
-        <div class="final-result-label"> ผลสรุปจากทุกโมเดล (Majority Vote)</div>
-        <div class="final-result-grade">{final_grade}</div>
-        <div class="final-result-detail">
-            {final_votes} จาก {total_models} โมเดล ทำนายได้เกรดนี้
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ========== ALL MODEL RESULTS ==========
-    st.markdown('<div class="section-title-dark"> ผลการทำนายจากแต่ละโมเดล</div>', unsafe_allow_html=True)
-    
-    # แสดงผลเป็น grid
-    result_html = '<div class="result-grid">'
-    
-    for name in sorted(models.keys()):
-        pred = predictions[name]
-        pred_label = target_names[int(pred)] if int(pred) < len(target_names) else str(pred)
-        confidence = confidences[name]
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("KNN", f"{info['scores']['KNN']:.2%}")
+        with col2:
+            st.metric("SVM", f"{info['scores']['SVM']:.2%}")
+        with col3:
+            st.metric("Decision Tree", f"{info['scores']['Decision Tree']:.2%}")
+        with col4:
+            st.metric("Random Forest", f"{info['scores']['Random Forest']:.2%}")
         
-        # สีของ card ตามความแม่นยำ
-        if name in model_accuracies:
-            acc = model_accuracies[name]
-            acc_display = f"Accuracy: {acc*100:.1f}%"
-            if acc >= 0.9:
-                border_color = "#10b981"  # เขียว
-            elif acc >= 0.7:
-                border_color = "#f59e0b"  # เหลือง
+        st.markdown("---")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig, ax = plt.subplots(figsize=(8, 5))
+            scores = info['scores']
+            ax.barh(list(scores.keys()), list(scores.values()), 
+                   color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'])
+            ax.set_xlim([0, 1])
+            ax.set_xlabel('Score')
+            ax.set_title('Model Performance')
+            plt.tight_layout()
+            st.pyplot(fig)
+        
+        with col2:
+            st.markdown("###  ข้อมูลโมเดล")
+            st.write(f"**Task:** {info['task']}")
+            st.write(f"**Target:** {info['target_column']}")
+            st.write(f"**Features:** {len(info['feature_names'])} ตัว")
+            if info['classes']:
+                st.write(f"**Classes:** {info['classes']}")
+    else:
+        st.warning("⚠️ ไม่พบไฟล์ model_info.pkl")
+
+# ============================================
+# 🎯 KNN
+# ============================================
+
+elif app_mode == "🎯 KNN":
+    st.title("🎯 K-Nearest Neighbor")
+    
+    if models and all(k in models for k in ['knn', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        st.markdown("### กรอกข้อมูลเพื่อทำนาย")
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'knn_{feat}')
+        
+        if st.button("🔮 ทำนายผล"):
+            df_input = pd.DataFrame([input_data])
+            # จัดคอลัมน์ให้ตรงกับตอน train
+            df_input = df_input.reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            pred = models['knn'].predict(scaled)
+            
+            if info['classes']:
+                result = info['classes'][pred[0]]
+                st.success(f"✅ ผลการทำนาย: **{result}**")
             else:
-                border_color = "#ef4444"  # แดง
-        else:
-            acc_display = "Unsupervised"
-            border_color = "#667eea"  # ม่วง
-        
-        confidence_text = ""
-        if confidence is not None:
-            confidence_text = f"ความมั่นใจ: {confidence*100:.1f}%"
-        elif name == 'K-Means':
-            confidence_text = f"Cluster: {pred_label}"
-        
-        result_html += f"""
-        <div class="model-result-card" style="border-left-color: {border_color};">
-            <div class="model-name">{name}</div>
-            <div class="model-prediction">{pred_label}</div>
-            <div class="model-confidence">{confidence_text}</div>
-            <div style="text-align: center;">
-                <span class="model-accuracy">{acc_display}</span>
-            </div>
-        </div>
-        """
-    
-    result_html += '</div>'
-    st.markdown(result_html, unsafe_allow_html=True)
-    
-    # ========== COMPARISON CHART ==========
-    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-    st.markdown("### 📊 เปรียบเทียบผลการทำนาย")
-    
-    # กราฟ 1: เกรดที่ทำนายได้จากแต่ละโมเดล
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    
-    # กราฟซ้าย: Bar chart แสดงเกรดที่ทำนายได้
-    model_names_list = [n for n in sorted(models.keys()) if n != 'K-Means']
-    pred_labels = [target_names[int(predictions[n])] if int(predictions[n]) < len(target_names) else str(predictions[n]) for n in model_names_list]
-    
-    colors = ['#667eea' if p == final_grade else '#cbd5e1' for p in pred_labels]
-    axes[0].barh(model_names_list, [1]*len(model_names_list), color=colors, height=0.6)
-    axes[0].set_yticks(range(len(model_names_list)))
-    axes[0].set_yticklabels(model_names_list, fontsize=11, fontweight='600')
-    axes[0].set_xlabel('เกรดที่ทำนายได้', fontsize=12, fontweight='700', color='#0f172a')
-    axes[0].set_title('🎯 เกรดที่ทำนายได้จากแต่ละโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
-    axes[0].set_xlim(0, 1.5)
-    axes[0].set_xticks([])
-    
-    # แสดงเกรดบน bar
-    for i, (model, label) in enumerate(zip(model_names_list, pred_labels)):
-        axes[0].text(1.05, i, label, va='center', fontsize=12, fontweight='700', color='#0f172a')
-    
-    # กราฟขวา: Accuracy comparison
-    if model_accuracies:
-        acc_models = sorted(model_accuracies.keys(), key=lambda x: model_accuracies[x], reverse=True)
-        acc_values = [model_accuracies[m]*100 for m in acc_models]
-        acc_colors = ['#10b981' if m == max(model_accuracies, key=model_accuracies.get) else '#667eea' for m in acc_models]
-        
-        bars = axes[1].barh(acc_models, acc_values, color=acc_colors, height=0.6)
-        axes[1].set_xlabel('Accuracy (%)', fontsize=12, fontweight='700', color='#0f172a')
-        axes[1].set_title('📈 ความแม่นยำของแต่ละโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
-        axes[1].set_xlim(0, 100)
-        axes[1].grid(axis='x', alpha=0.3, linestyle='--')
-        
-        for i, (model, acc) in enumerate(zip(acc_models, acc_values)):
-            axes[1].text(acc + 1, i, f"{acc:.1f}%", va='center', fontsize=11, fontweight='700', color='#0f172a')
-    
-    plt.tight_layout()
-    st.pyplot(fig)
-    
-    # ========== VOTE DISTRIBUTION ==========
-    st.markdown("### ️ การกระจายโหวตของเกรด")
-    
-    vote_df = pd.DataFrame({
-        'Grade': list(vote_counter.keys()),
-        'Votes': list(vote_counter.values())
-    }).sort_values('Votes', ascending=True)
-    
-    fig2, ax2 = plt.subplots(figsize=(10, 5))
-    vote_colors = ['#10b981' if g == final_grade else '#667eea' for g in vote_df['Grade']]
-    bars2 = ax2.barh(vote_df['Grade'], vote_df['Votes'], color=vote_colors, height=0.5, edgecolor='white', linewidth=2)
-    ax2.set_xlabel('จำนวนโหวต', fontsize=12, fontweight='700', color='#0f172a')
-    ax2.set_title('การกระจายโหวตจากทุกโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
-    ax2.set_xlim(0, total_models + 1)
-    ax2.grid(axis='x', alpha=0.3, linestyle='--')
-    
-    for i, (idx, row) in enumerate(vote_df.iterrows()):
-        ax2.text(row['Votes'] + 0.1, i, f"{row['Votes']} โหวต", va='center', fontsize=12, fontweight='700', color='#0f172a')
-    
-    plt.tight_layout()
-    st.pyplot(fig2)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
+    else:
+        st.error("⚠️ ไม่พบไฟล์โมเดล KNN")
 
-st.markdown('</div>', unsafe_allow_html=True)
+# ============================================
+# 🌳 Decision Tree
+# ============================================
 
-# ========== Footer ==========
-st.markdown("""
-<div style="text-align: center; padding: 2rem; margin-top: 2rem;">
-    <p style="font-size: 1rem; margin: 0; color: #94a3b8;">Built with ❤️ using Streamlit + Machine Learning</p>
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #64748b;">© 2024 AI Grade Predictor System</p>
-</div>
-""", unsafe_allow_html=True)
+elif app_mode == "🌳 Decision Tree":
+    st.title("🌳 Decision Tree")
+    
+    if models and all(k in models for k in ['dt', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'dt_{feat}')
+        
+        if st.button("🔮 ทำนายผล"):
+            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            pred = models['dt'].predict(scaled)
+            
+            if info['classes']:
+                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
+            else:
+                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
+            
+            # Feature Importance
+            if hasattr(models['dt'], 'feature_importances_'):
+                st.markdown("### 📊 ความสำคัญของ Features")
+                imp_df = pd.DataFrame({
+                    'Feature': features,
+                    'Importance': models['dt'].feature_importances_
+                }).sort_values('Importance', ascending=True)
+                st.bar_chart(imp_df.set_index('Feature'))
+    else:
+        st.error("️ ไม่พบไฟล์โมเดล")
+
+# ============================================
+# ⚡ SVM
+# ============================================
+
+elif app_mode == "⚡ SVM":
+    st.title("⚡ Support Vector Machine")
+    
+    if models and all(k in models for k in ['svm', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'svm_{feat}')
+        
+        if st.button("🔮 ทำนายผล"):
+            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            pred = models['svm'].predict(scaled)
+            
+            if info['classes']:
+                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
+            else:
+                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
+    else:
+        st.error("⚠️ ไม่พบไฟล์โมเดล")
+
+# ============================================
+# 🌲 Random Forest
+# ============================================
+
+elif app_mode == " Random Forest":
+    st.title(" Random Forest (Ensemble)")
+    
+    if models and all(k in models for k in ['rf', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'rf_{feat}')
+        
+        if st.button("🔮 ทำนายผล"):
+            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            pred = models['rf'].predict(scaled)
+            
+            if info['classes']:
+                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
+            else:
+                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
+            
+            if hasattr(models['rf'], 'feature_importances_'):
+                st.markdown("### 📊 Feature Importance")
+                imp_df = pd.DataFrame({
+                    'Feature': features,
+                    'Importance': models['rf'].feature_importances_
+                }).sort_values('Importance', ascending=True)
+                st.bar_chart(imp_df.set_index('Feature'))
+    else:
+        st.error("⚠️ ไม่พบไฟล์โมเดล")
+
+# ============================================
+# 📈 Regression
+# ============================================
+
+elif app_mode == "📈 Regression":
+    st.title("📈 Linear Regression")
+    
+    if models and all(k in models for k in ['lr', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'lr_{feat}')
+        
+        if st.button("🔮 ทำนายค่า"):
+            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            pred = models['lr'].predict(scaled)
+            st.success(f"✅ ค่าที่ทำนายได้: **{pred[0]:.4f}**")
+    else:
+        st.error("️ ไม่พบไฟล์โมเดล")
+
+# ============================================
+# 🔵 K-Means
+# ============================================
+
+elif app_mode == "🔵 K-Means":
+    st.title("🔵 K-Means Clustering")
+    
+    if models and all(k in models for k in ['kmeans', 'scaler', 'info']):
+        info = models['info']
+        features = info['feature_names']
+        
+        input_data = {}
+        cols = st.columns(2)
+        for i, feat in enumerate(features):
+            with cols[i % 2]:
+                input_data[feat] = st.number_input(feat, value=0.0, key=f'km_{feat}')
+        
+        if st.button("🔮 จัดกลุ่ม"):
+            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
+            scaled = models['scaler'].transform(df_input)
+            cluster = models['kmeans'].predict(scaled)
+            st.success(f"✅ ข้อมูลนี้อยู่ใน Cluster: **{cluster[0]}**")
+        
+        # Visualize clusters
+        if uploaded_file:
+            st.markdown("---")
+            st.markdown("### 📊 Visualization จากไฟล์ที่อัพโหลด")
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            
+            X = df.drop(columns=[info['target_column']])
+            X = pd.get_dummies(X, drop_first=True)
+            X_scaled = models['scaler'].transform(X)
+            labels = models['kmeans'].predict(X_scaled)
+            
+            fig, ax = plt.subplots(figsize=(8, 5))
+            scatter = ax.scatter(X_scaled[:, 0], X_scaled[:, 1], 
+                                c=labels, cmap='viridis', alpha=0.6)
+            ax.scatter(models['kmeans'].cluster_centers_[:, 0], 
+                      models['kmeans'].cluster_centers_[:, 1],
+                      c='red', s=200, marker='X', label='Centroids')
+            ax.set_xlabel(features[0] if len(features) > 0 else 'Feature 1')
+            ax.set_ylabel(features[1] if len(features) > 1 else 'Feature 2')
+            ax.legend()
+            ax.set_title('K-Means Clustering')
+            st.pyplot(fig)
+    else:
+        st.error("⚠️ ไม่พบไฟล์โมเดล")
+
+# ============================================
+# 📊 แสดงข้อมูลจาก Excel
+# ============================================
+
+if uploaded_file is not None:
+    st.sidebar.success(f"✅ โหลดไฟล์: {uploaded_file.name}")
+    
+    if uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+    
+    st.markdown("---")
+    st.markdown("### 📄 ข้อมูลจากไฟล์ Excel")
+    st.dataframe(df.head(10))
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 📊 ขนาดข้อมูล")
+        st.write(f"Rows: {df.shape[0]}")
+        st.write(f"Columns: {df.shape[1]}")
+    with col2:
+        st.markdown("### 📈 สรุปสถิติ")
+        st.dataframe(df.describe())
+
+# Footer
+st.markdown("---")
+st.markdown("<div style='text-align: center; color: #95a5a6;'><p>Created with ❤️ using Streamlit</p></div>", unsafe_allow_html=True)
