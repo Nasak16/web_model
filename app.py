@@ -5,7 +5,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-import tempfile
 from sklearn.metrics import accuracy_score, confusion_matrix
 
 # ========== Page Config ==========
@@ -34,94 +33,73 @@ st.markdown("""
         margin-top: 1.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem;
         border-bottom: 2px solid #667eea;
     }
+    .metric-box {
+        background: white; padding: 1.2rem; border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border-left: 4px solid #667eea;
+    }
     .prediction-result {
         background: linear-gradient(90deg, #10b981 0%, #059669 100%);
         color: white; padding: 1.5rem; border-radius: 16px;
         text-align: center; font-size: 1.3rem; font-weight: 600; margin-top: 1rem;
     }
-    .upload-box {
-        background: white; padding: 2rem; border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center;
-    }
+    .footer { text-align: center; color: #9ca3af; padding: 2rem 0 1rem 0; font-size: 0.9rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# ========== Header ==========
-st.markdown('<h1 class="main-title"> Student Grade Predictor</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">ระบบทำนายเกรดนักเรียนด้วย Machine Learning</p>', unsafe_allow_html=True)
-
-# ========== Upload Models ==========
-st.markdown("### 📦 อัปโหลดไฟล์โมเดล")
-st.markdown("""
-<div class="upload-box">
-    <p>กรุณาอัปโหลดไฟล์ <code>.pkl</code> ทั้งหมดจากโฟลเดอร์ <code>models/</code></p>
-    <p style="color: #6b7280; font-size: 0.9rem;">
-        (K-Means.pkl, SVM.pkl, Decision_Tree.pkl, KNN.pkl, Logistic_Regression.pkl, 
-        Random_Forest.pkl, scaler.pkl, test_data.pkl)
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-uploaded_files = st.file_uploader(
-    "เลือกไฟล์ทั้งหมด (可以多选)",
-    type=['pkl'],
-    accept_multiple_files=True
-)
-
-if not uploaded_files:
-    st.warning("⚠️ ยังไม่มีการอัปโหลดไฟล์โมเดล กรุณาอัปโหลดไฟล์จาก Colab ก่อน")
-    st.stop()
-
-# ========== Load Models from Uploaded Files ==========
+# ========== Load Models from 'models/' folder ==========
 @st.cache_resource
-def load_from_uploaded(files):
-    models = {}
-    scaler = None
-    test_data = None
+def load_all():
+    models_path = 'models'
     
-    for f in files:
-        # ใช้ชื่อไฟล์เป็นตัวระบุ
-        fname = f.name
-        f.seek(0)
-        data = joblib.load(f)
-        
-        if fname == 'scaler.pkl':
-            scaler = data
-        elif fname == 'test_data.pkl':
-            test_data = data
-        else:
-            name = fname.replace('_', ' ').replace('.pkl', '')
-            models[name] = data
+    if not os.path.exists(models_path):
+        st.error(f"❌ ไม่พบโฟลเดอร์ '{models_path}' กรุณาตรวจสอบว่ามีการอัปโหลดโฟลเดอร์ models/ ขึ้น GitHub แล้ว")
+        return None, None, None
+    
+    models = {}
+    for f in os.listdir(models_path):
+        if f.endswith('.pkl') and f not in ['scaler.pkl', 'test_data.pkl']:
+            name = f.replace('_', ' ').replace('.pkl', '')
+            models[name] = joblib.load(os.path.join(models_path, f))
+    
+    scaler = joblib.load(os.path.join(models_path, 'scaler.pkl'))
+    test_data = joblib.load(os.path.join(models_path, 'test_data.pkl'))
     
     return models, scaler, test_data
 
-models, scaler, test_data = load_from_uploaded(uploaded_files)
+models, scaler, test_data = load_all()
 
-# ตรวจสอบว่ามีไฟล์ครบไหม
-required_files = ['scaler.pkl', 'test_data.pkl']
-uploaded_names = [f.name for f in uploaded_files]
-missing = [f for f in required_files if f not in uploaded_names]
-
-if missing:
-    st.error(f" ขาดไฟล์: {missing}")
+# ตรวจสอบว่าโหลดสำเร็จไหม
+if models is None:
     st.stop()
 
 if not models:
-    st.error("❌ ไม่พบไฟล์โมเดล (K-Means.pkl, SVM.pkl, ฯลฯ)")
+    st.error("❌ ไม่พบไฟล์โมเดลในโฟลเดอร์ models/ กรุณาตรวจสอบว่ามีไฟล์ .pkl ครบถ้วน")
     st.stop()
 
-st.success(f"✅ โหลดโมเดลสำเร็จ! ({len(models)} โมเดล)")
-
-# ========== Sidebar ==========
-st.sidebar.markdown("## 🎛️ Control Panel")
-model_name = st.sidebar.selectbox("🧠 เลือกโมเดล", list(models.keys()))
-model = models[model_name]
+if test_data is None:
+    st.error("❌ ไม่พบไฟล์ test_data.pkl")
+    st.stop()
 
 feature_names = test_data['feature_names']
 target_names = test_data['target_names']
 
+# ========== Header ==========
+st.markdown('<h1 class="main-title">🎓 Student Grade Predictor</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">ระบบทำนายเกรดนักเรียนด้วย Machine Learning</p>', unsafe_allow_html=True)
+
+# ========== Sidebar ==========
+st.sidebar.markdown("## 🎛️ Control Panel")
+model_name = st.sidebar.selectbox("🧠 เลือกโมเดล", sorted(list(models.keys())))
+model = models[model_name]
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📊 โมเดลที่พร้อมใช้งาน")
+for m in sorted(models.keys()):
+    st.sidebar.markdown(f"• {m}")
+
 # ========== Main Content ==========
-st.markdown(f'<div class="section-title">📊 ผลการทดสอบ: {model_name}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="section-title"> ผลการทดสอบ: {model_name}</div>', unsafe_allow_html=True)
 
 # --- Metrics ---
 if model_name == 'K-Means':
@@ -142,7 +120,7 @@ else:
     col3.metric("📝 จำนวนข้อมูล Test", len(y_pred))
     
     # Confusion Matrix
-    st.markdown("#### 📈 Confusion Matrix")
+    st.markdown("####  Confusion Matrix")
     cm = confusion_matrix(test_data['y_test'], y_pred)
     fig, ax = plt.subplots(figsize=(7, 5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
@@ -170,7 +148,7 @@ if model_name in ['Random Forest', 'Decision Tree'] and hasattr(model, 'feature_
     st.pyplot(fig)
 
 # ========== Live Prediction ==========
-st.markdown('<div class="section-title">🔮 ทดลองทำนายเกรดนักเรียนใหม่</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title"> ทดลองทำนายเกรดนักเรียนใหม่</div>', unsafe_allow_html=True)
 
 # แยก features
 numeric_features = []
@@ -186,7 +164,7 @@ for feat in feature_names:
         numeric_features.append(feat)
 
 with st.form("prediction_form"):
-    st.markdown("##### 📋 กรอกข้อมูลนักเรียน")
+    st.markdown("#####  กรอกข้อมูลนักเรียน")
     inputs = {}
     
     num_cols = st.columns(min(4, len(numeric_features)))
@@ -243,4 +221,4 @@ if submitted:
 
 # Footer
 st.markdown("---")
-st.markdown('<div style="text-align:center; color:#9ca3af; padding:1rem;">Built with ❤️ using Streamlit + Scikit-learn</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer">Built with ❤️ using Streamlit + Scikit-learn | Student Grade Prediction System</div>', unsafe_allow_html=True)
