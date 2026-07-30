@@ -80,7 +80,6 @@ def load_models():
             'svm': 'svm_model.pkl', 'rf': 'random_forest_model.pkl',
             'lr': 'linear_regression_model.pkl', 'kmeans': 'kmeans_model.pkl',
             'scaler': 'scaler.pkl', 'info': 'model_info.pkl',
-            # เพิ่มไฟล์ข้อมูล Training สำหรับการ Retrain แบบ Real-time
             'X_train': 'X_train_scaled.pkl', 'y_train': 'y_train.pkl'
         }
         for key, filename in files.items():
@@ -90,7 +89,7 @@ def load_models():
     return models
 
 models = load_models()
-st.title("🎓 Student Grade Prediction System")
+st.title(" Student Grade Prediction System")
 
 # Navigation
 page = st.sidebar.selectbox(
@@ -101,7 +100,7 @@ page = st.sidebar.selectbox(
 # ============================================
 # หน้า 1: ข้อมูลผู้พัฒนา
 # ============================================
-if page == "👨‍💻 ข้อมูลผู้พัฒนา":
+if page == "‍💻 ข้อมูลผู้พัฒนา":
     show_developer_info()
     st.markdown("---")
     st.markdown("### 📋 เกี่ยวกับโปรเจค")
@@ -123,7 +122,7 @@ elif page == "🔮 ทำนายผล":
     with col1:
         student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1)
         gender = st.selectbox("👤 Gender", ["Male", "Female"])
-        study_time_hours = st.number_input("⏰ Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
+        study_time_hours = st.number_input(" Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
         attendance_percent = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5)
         parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"])
@@ -169,15 +168,13 @@ elif page == "🔮 ทำนายผล":
                     
                     classes = models['info'].get('classes', ['A', 'B', 'C', 'D', 'F'])
                     
-                    # ==========================================
-                    # --- 1. KNN Display (พร้อม Slider เลือก K) ---
-                    # ==========================================
+                    # --- 1. KNN Display ---
                     if model_choice == "K-Nearest Neighbor":
                         current_k = getattr(models['knn'], 'n_neighbors', 5)
                         
-                        st.markdown("### ⚙️ ตั้งค่าพารามิเตอร์ KNN")
+                        st.markdown("### ️ ตั้งค่าพารามิเตอร์ KNN")
                         k_value = st.slider(
-                            "🔢 เลือกจำนวน K (Neighbors)",
+                            " เลือกจำนวน K (Neighbors)",
                             min_value=1,
                             max_value=20,
                             value=current_k,
@@ -186,7 +183,6 @@ elif page == "🔮 ทำนายผล":
                         
                         active_model = models['knn']
                         
-                        # ถ้าผู้ใช้เปลี่ยนค่า K และมีข้อมูล training ให้ retrain แบบ Real-time
                         if k_value != current_k:
                             if 'X_train' in models and 'y_train' in models:
                                 with st.spinner(f'🔄 กำลัง retrain โมเดลด้วย K={k_value}...'):
@@ -197,12 +193,11 @@ elif page == "🔮 ทำนายผล":
                                         weights=models['knn'].weights
                                     )
                                     active_model.fit(models['X_train'], models['y_train'])
-                                    # ทำนายใหม่ด้วยโมเดลที่ retrain
                                     prediction = active_model.predict(scaled_data)
                                     exec_time = time.time() - start_time
                                     st.success(f"✅ Retrain สำเร็จด้วย K={k_value}")
                             else:
-                                st.warning(f"⚠️ ไม่พบไฟล์ข้อมูล Training (`X_train_scaled.pkl`, `y_train.pkl`) สำหรับ retrain โมเดลใหม่ ระบบจึงแสดงผลด้วยค่า K เดิมที่บันทึกไว้ ({current_k})")
+                                st.warning(f"⚠️ ไม่พบไฟล์ข้อมูล Training ระบบจึงแสดงผลด้วยค่า K เดิม ({current_k})")
                                 k_value = current_k
                         
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
@@ -216,7 +211,6 @@ elif page == "🔮 ทำนายผล":
                         
                         st.info("💡 **KNN** ทำนายโดยดูจากเพื่อนบ้านที่ใกล้ที่สุด (K neighbors)")
                         
-                        # Probability Bars
                         if hasattr(active_model, 'predict_proba'):
                             proba = active_model.predict_proba(scaled_data)[0]
                             st.markdown("### 📊 ความน่าจะเป็นของแต่ละเกรด")
@@ -233,7 +227,6 @@ elif page == "🔮 ทำนายผล":
                                 </div>
                                 """, unsafe_allow_html=True)
                         
-                        # Parameters
                         st.markdown("### 📋 พารามิเตอร์ปัจจุบัน")
                         p_col1, p_col2, p_col3 = st.columns(3)
                         with p_col1:
@@ -245,9 +238,7 @@ elif page == "🔮 ทำนายผล":
                             weights = getattr(active_model, 'weights', 'N/A')
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">⚖️ Weights:</span><br><span style="color:#667eea; font-size:20px; font-weight:bold">{weights}</span></div>', unsafe_allow_html=True)
 
-                    # ==========================================
                     # --- 2. Decision Tree Display ---
-                    # ==========================================
                     elif model_choice == "Decision Tree":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
@@ -262,9 +253,7 @@ elif page == "🔮 ทำนายผล":
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
-                    # ==========================================
                     # --- 3. SVM Display ---
-                    # ==========================================
                     elif model_choice == "SVM":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
@@ -273,14 +262,12 @@ elif page == "🔮 ทำนายผล":
                             <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (SVM)</p>
                         </div>
                         """, unsafe_allow_html=True)
-                        st.info("⚡ **SVM** หาเส้นแบ่ง (Hyperplane) ที่แยก classes ได้ดีที่สุด")
+                        st.info(" **SVM** หาเส้นแบ่ง (Hyperplane) ที่แยก classes ได้ดีที่สุด")
                         if hasattr(models[model_key], 'decision_function'):
                             conf = models[model_key].decision_function(scaled_data)[0]
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🎯 Confidence Score:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{conf[0]:.4f}</span></div>', unsafe_allow_html=True)
 
-                    # ==========================================
                     # --- 4. Random Forest Display ---
-                    # ==========================================
                     elif model_choice == "Random Forest":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
@@ -289,7 +276,7 @@ elif page == "🔮 ทำนายผล":
                             <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (Random Forest)</p>
                         </div>
                         """, unsafe_allow_html=True)
-                        st.info("🌲 **Random Forest** โหวตผลลัพธ์จาก Decision Trees หลายร้อยต้น")
+                        st.info(" **Random Forest** โหวตผลลัพธ์จาก Decision Trees หลายร้อยต้น")
                         if hasattr(models[model_key], 'n_estimators'):
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🌳 จำนวน Trees:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{models[model_key].n_estimators}</span></div>', unsafe_allow_html=True)
                         if hasattr(models[model_key], 'feature_importances_'):
@@ -297,9 +284,7 @@ elif page == "🔮 ทำนายผล":
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
-                    # ==========================================
                     # --- 5. Linear Regression Display ---
-                    # ==========================================
                     elif model_choice == "Linear Regression":
                         score = prediction[0]
                         st.markdown(f"""
@@ -314,7 +299,7 @@ elif page == "🔮 ทำนายผล":
                             coef_df = pd.DataFrame({'Feature': feature_names, 'Coefficient': models[model_key].coef_})
                             st.dataframe(coef_df, use_container_width=True)
 
-                    # --- Bottom Metrics Cards (Common for all) ---
+                    # Bottom Metrics Cards
                     st.markdown("---")
                     m_col1, m_col2, m_col3 = st.columns(3)
                     with m_col1:
@@ -346,7 +331,7 @@ elif page == "🔮 ทำนายผล":
                 else:
                     st.error(f"⚠️ ไม่พบโมเดล {model_choice}")
             except Exception as e:
-                st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
+                st.error(f"️ เกิดข้อผิดพลาด: {str(e)}")
         else:
             st.error("⚠️ ไม่พบไฟล์โมเดล กรุณาตรวจสอบโฟลเดอร์ models/")
 
@@ -357,14 +342,14 @@ elif page == "📊 เปรียบเทียบโมเดล":
     st.markdown("### 🔍 เปรียบเทียบผลลัพธ์จากทุกโมเดล")
     col1, col2 = st.columns(2)
     with col1:
-        student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1, key='c_id')
-        gender = st.selectbox("👤 Gender", ["Male", "Female"], key='c_g')
+        student_id = st.number_input(" Student ID", min_value=0, value=1001, step=1, key='c_id')
+        gender = st.selectbox(" Gender", ["Male", "Female"], key='c_g')
         study_time_hours = st.number_input("⏰ Study Time", min_value=0.0, max_value=12.0, value=6.5, step=0.5, key='c_st')
-        attendance_percent = st.number_input("📊 Attendance %", min_value=0.0, max_value=100.0, value=95.0, step=1.0, key='c_att')
+        attendance_percent = st.number_input(" Attendance %", min_value=0.0, max_value=100.0, value=95.0, step=1.0, key='c_att')
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='c_sl')
-        parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"], key='c_pe')
+        parental_education = st.selectbox(" Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"], key='c_pe')
     with col2:
-        internet_access = st.selectbox("🌐 Internet Access", ["Yes", "No"], key='c_ia')
+        internet_access = st.selectbox(" Internet Access", ["Yes", "No"], key='c_ia')
         extracurricular_activities = st.selectbox("🎯 Extracurricular", ["Yes", "No"], key='c_ea')
         part_time_job = st.selectbox("💼 Part-time Job", ["Yes", "No"], key='c_pt')
         previous_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=88.5, step=0.1, key='c_pg')
@@ -422,7 +407,7 @@ elif page == "📊 เปรียบเทียบโมเดล":
                 st.markdown("### 📋 ตารางเปรียบเทียบ")
                 st.dataframe(pd.DataFrame(results), use_container_width=True)
             except Exception as e:
-                st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
+                st.error(f"️ เกิดข้อผิดพลาด: {str(e)}")
 
 # ============================================
 # หน้า 4: K-Means Clustering (แก้ไขแล้ว)
@@ -437,42 +422,35 @@ elif page == "🔵 K-Means Clustering":
             attendance = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0, key='km_att')
             sleep = st.number_input("😴 Sleep Hours (ชม./วัน)", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='km_sl')
         with col2:
-            prev_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
+            prev_grade = st.number_input(" Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
             final_exam = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=80.0, step=0.1, key='km_fe')
             st.markdown("### 🎯 จำนวน Cluster")
             n_clusters = st.slider("เลือกจำนวนกลุ่ม", 2, 5, 3)
         
-        if st.button("🔵 จัดกลุ่มข้อมูล", use_container_width=True):
+        if st.button(" จัดกลุ่มข้อมูล", use_container_width=True):
             with st.spinner('กำลังประมวลผล...'):
-                # 1. สร้าง DataFrame ให้มีโครงสร้างตรงกับตอน Train (เติมค่า Default สำหรับฟิลด์ที่ไม่ได้ถาม)
                 input_dict = {
                     'student_id': [1],
-                    'gender': ['Male'], # ค่าเริ่มต้น
+                    'gender': ['Male'],
                     'study_time_hours': [study_time],
                     'attendance_percent': [attendance],
                     'sleep_hours': [sleep],
-                    'parental_education': ['Bachelors'], # ค่าเริ่มต้น
-                    'internet_access': ['Yes'], # ค่าเริ่มต้น
-                    'extracurricular_activities': ['Yes'], # ค่าเริ่มต้น
-                    'part_time_job': ['No'], # ค่าเริ่มต้น
+                    'parental_education': ['Bachelors'],
+                    'internet_access': ['Yes'],
+                    'extracurricular_activities': ['Yes'],
+                    'part_time_job': ['No'],
                     'previous_grade': [prev_grade],
                     'final_exam_score': [final_exam]
                 }
                 input_df = pd.DataFrame(input_dict)
-                
-                # 2. แปลงข้อมูล Categorical เป็นตัวเลข (One-Hot Encoding) เหมือนตอน Train
                 input_processed = pd.get_dummies(input_df, drop_first=True)
                 
-                # 3. จัดเรียงคอลัมน์ให้ตรงกับ feature_names ที่โมเดลจำไว้
                 feature_names = models['info'].get('feature_names', [])
                 for col in feature_names:
                     if col not in input_processed.columns:
                         input_processed[col] = 0
-                        
-                # เรียงคอลัมน์ให้ตรงเป๊ะ
                 input_processed = input_processed[feature_names]
                 
-                # 4. ทำนายผล (K-Means ใน Colab ถูก train ด้วยข้อมูลที่ไม่ได้ Scale ดังนั้นไม่ต้องใส่ scaler)
                 cluster = int(models['kmeans'].predict(input_processed)[0])
             
             st.markdown("---")
@@ -484,30 +462,47 @@ elif page == "🔵 K-Means Clustering":
             </div>
             """, unsafe_allow_html=True)
             
-            # แสดงลักษณะของ Cluster
             if hasattr(models['kmeans'], 'cluster_centers_'):
                 st.markdown("### 📊 ลักษณะค่าเฉลี่ยของแต่ละ Cluster")
-                # พยายามจับคู่ชื่อคอลัมน์เดิม (เฉพาะตัวเลข) เพื่อความสวยงาม
-                numeric_features = [f for f in feature_names if not any(x in f for x in ['gender', 'parental', 'internet', 'extracurricular', 'part_time'])]
-                display_cols = numeric_features[:5] if len(numeric_features) >= 5 else numeric_features
                 
-                centers = pd.DataFrame(
+                # สร้าง DataFrame จาก cluster centers (ใช้ feature_names ครบทุกคอลัมน์)
+                centers_df = pd.DataFrame(
                     models['kmeans'].cluster_centers_, 
                     columns=feature_names
-                )[display_cols]
+                )
                 
-                # เปลี่ยนชื่อคอลัมน์ให้อ่านง่าย
-                center_display = centers.copy()
-                center_display.columns = ['Study Time', 'Attendance', 'Sleep', 'Previous Grade', 'Final Exam']
-                st.dataframe(center_display, use_container_width=True)
+                # แสดงตาราง (เลือกเฉพาะคอลัมน์ตัวเลขหลัก)
+                numeric_cols = ['study_time_hours', 'attendance_percent', 'sleep_hours', 
+                               'previous_grade', 'final_exam_score']
+                display_centers = centers_df[numeric_cols].copy()
+                display_centers.columns = ['Study Time', 'Attendance', 'Sleep', 
+                                          'Previous Grade', 'Final Exam']
+                st.dataframe(display_centers, use_container_width=True)
                 
-                # Visualization
-                fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-                axes[0].scatter(centers['study_time_hours'], centers['attendance_percent'], c=range(len(centers)), s=200, cmap='viridis')
-                axes[0].set_title('Study Time vs Attendance')
-                axes[1].scatter(centers['previous_grade'], centers['final_exam_score'], c=range(len(centers)), s=200, cmap='viridis')
-                axes[1].set_title('Previous vs Final Grade')
-                st.pyplot(fig)
+                # Visualization (ใช้ centers_df ที่มีคอลัมน์ครบ)
+                try:
+                    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+                    
+                    if 'study_time_hours' in centers_df.columns and 'attendance_percent' in centers_df.columns:
+                        axes[0].scatter(centers_df['study_time_hours'], 
+                                       centers_df['attendance_percent'], 
+                                       c=range(len(centers_df)), s=200, cmap='viridis')
+                        axes[0].set_xlabel('Study Time (hours)')
+                        axes[0].set_ylabel('Attendance (%)')
+                        axes[0].set_title('Study Time vs Attendance')
+                    
+                    if 'previous_grade' in centers_df.columns and 'final_exam_score' in centers_df.columns:
+                        axes[1].scatter(centers_df['previous_grade'], 
+                                       centers_df['final_exam_score'], 
+                                       c=range(len(centers_df)), s=200, cmap='viridis')
+                        axes[1].set_xlabel('Previous Grade')
+                        axes[1].set_ylabel('Final Exam Score')
+                        axes[1].set_title('Previous vs Final Grade')
+                    
+                    plt.tight_layout()
+                    st.pyplot(fig)
+                except Exception as e:
+                    st.warning(f"⚠️ ไม่สามารถแสดงกราฟได้: {str(e)}")
         
         st.markdown("---")
         st.markdown("### 📁 อัพโหลดไฟล์เพื่อจัดกลุ่มทั้งชุด")
@@ -516,8 +511,8 @@ elif page == "🔵 K-Means Clustering":
             df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
             st.dataframe(df.head())
             
-            # ประมวลผลไฟล์ที่อัพโหลด
-            X_upload = df.drop(columns=[models['info'].get('target_column', df.columns[-1])], errors='ignore')
+            target_col = models['info'].get('target_column', df.columns[-1])
+            X_upload = df.drop(columns=[target_col], errors='ignore')
             X_upload_processed = pd.get_dummies(X_upload, drop_first=True)
             
             for col in feature_names:
@@ -531,6 +526,7 @@ elif page == "🔵 K-Means Clustering":
             st.dataframe(df)
     else:
         st.error("⚠️ ไม่พบไฟล์ kmeans_model.pkl")
+
 # ============================================
 # หน้า 5: ข้อมูลโมเดล
 # ============================================
