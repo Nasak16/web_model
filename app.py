@@ -2,398 +2,213 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 
-# ============================================
-# 🎨 Page Configuration
-# ============================================
-
+# Page configuration
 st.set_page_config(
-    page_title="ML Prediction App",
-    page_icon="🤖",
+    page_title="Student Grade Prediction",
+    page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS - Simple & Beautiful
+# Custom CSS
 st.markdown("""
 <style>
     .main {
-        background-color: #fafafa;
+        background-color: #0e1117;
     }
     .stButton>button {
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 10px 24px;
+        padding: 12px 30px;
         font-weight: 600;
-        transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        font-size: 16px;
     }
     .metric-card {
-        background: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border-left: 4px solid #667eea;
+        color: white;
     }
-    h1 { color: #2c3e50; }
-    h2 { color: #34495e; }
-    .sidebar .sidebar-content {
-        background-color: #2c3e50;
+    h1, h2, h3 {
+        color: #ffffff;
+    }
+    .stNumberInput>div>div>input {
+        background-color: #262730;
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================
-#  Load Models
-# ============================================
-
+# Load models
 @st.cache_resource
-def load_all_models():
-    """โหลดโมเดลทั้งหมดจากโฟลเดอร์ models/"""
+def load_models():
     models = {}
     model_dir = 'models'
     
-    if not os.path.exists(model_dir):
-        return None
+    if os.path.exists(model_dir):
+        files = {
+            'knn': 'knn_model.pkl',
+            'dt': 'decision_tree_model.pkl',
+            'svm': 'svm_model.pkl',
+            'rf': 'random_forest_model.pkl',
+            'lr': 'linear_regression_model.pkl',
+            'scaler': 'scaler.pkl',
+            'info': 'model_info.pkl'
+        }
+        
+        for key, filename in files.items():
+            path = os.path.join(model_dir, filename)
+            if os.path.exists(path):
+                models[key] = joblib.load(path)
     
-    files_to_load = {
-        'knn': 'knn_model.pkl',
-        'dt': 'decision_tree_model.pkl',
-        'svm': 'svm_model.pkl',
-        'rf': 'random_forest_model.pkl',
-        'lr': 'linear_regression_model.pkl',
-        'kmeans': 'kmeans_model.pkl',
-        'scaler': 'scaler.pkl',
-        'info': 'model_info.pkl',
-        'le': 'label_encoder.pkl'
-    }
-    
-    for key, filename in files_to_load.items():
-        path = os.path.join(model_dir, filename)
-        if os.path.exists(path):
-            models[key] = joblib.load(path)
-    
-    return models if len(models) > 0 else None
+    return models
 
-models = load_all_models()
+models = load_models()
 
-# ============================================
-#  Sidebar
-# ============================================
+# Title
+st.title("🎓 Student Grade Prediction System")
+st.markdown("### ทำนายเกรดนักเรียนจากปัจจัยต่างๆ")
 
-st.sidebar.title("🤖 ML Prediction App")
-st.sidebar.markdown("---")
-
-if models:
-    app_mode = st.sidebar.radio(
-        "เลือกโมเดล",
-        ["📊 Dashboard", "🎯 KNN", " Decision Tree", 
-         "⚡ SVM", "🌲 Random Forest", "📈 Regression", "🔵 K-Means"]
-    )
-else:
-    st.sidebar.error("⚠️ ไม่พบไฟล์โมเดล")
-    st.sidebar.info("📁 วางไฟล์ .pkl ทั้งหมดในโฟลเดอร์ `models/`")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📤 อัพโหลดไฟล์ Excel")
-uploaded_file = st.sidebar.file_uploader(
-    "เลือกไฟล์ .xlsx หรือ .csv",
-    type=['xlsx', 'xls', 'csv']
+# Sidebar
+st.sidebar.title("⚙️ การตั้งค่า")
+model_choice = st.sidebar.selectbox(
+    "เลือกโมเดล",
+    ["K-Nearest Neighbor", "Decision Tree", "SVM", "Random Forest", "Linear Regression"]
 )
 
-# ============================================
-# 📊 Dashboard
-# ============================================
+# Main form
+st.markdown("### 📝 กรอกข้อมูลนักเรียน")
 
-if app_mode == "📊 Dashboard":
-    st.title("📊 Machine Learning Dashboard")
-    st.markdown("### ภาพรวมประสิทธิภาพของโมเดล")
+col1, col2 = st.columns(2)
+
+with col1:
+    student_id = st.number_input(" Student ID", min_value=0, value=1, step=1)
+    gender = st.selectbox("👤 Gender", ["Male", "Female"])
+    study_time_hours = st.number_input("⏰ Study Time (hours/day)", min_value=0.0, max_value=12.0, value=4.0, step=0.5)
+    attendance_percent = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0)
+    sleep_hours = st.number_input("😴 Sleep Hours (per day)", min_value=0.0, max_value=12.0, value=7.0, step=0.5)
+    parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"])
+
+with col2:
+    internet_access = st.selectbox("🌐 Internet Access", ["Yes", "No"])
+    extracurricular_activities = st.selectbox("🎯 Extracurricular Activities", ["Yes", "No"])
+    part_time_job = st.selectbox("💼 Part-time Job", ["Yes", "No"])
+    previous_grade = st.number_input(" Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1)
+    final_exam_score = st.number_input(" Final Exam Score", min_value=0.0, max_value=100.0, value=80.0, step=0.1)
+
+# Prediction button
+if st.button(" ทำนายเกรด", use_container_width=True):
     
-    if models and 'info' in models:
-        info = models['info']
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("KNN", f"{info['scores']['KNN']:.2%}")
-        with col2:
-            st.metric("SVM", f"{info['scores']['SVM']:.2%}")
-        with col3:
-            st.metric("Decision Tree", f"{info['scores']['Decision Tree']:.2%}")
-        with col4:
-            st.metric("Random Forest", f"{info['scores']['Random Forest']:.2%}")
-        
-        st.markdown("---")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            fig, ax = plt.subplots(figsize=(8, 5))
-            scores = info['scores']
-            ax.barh(list(scores.keys()), list(scores.values()), 
-                   color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'])
-            ax.set_xlim([0, 1])
-            ax.set_xlabel('Score')
-            ax.set_title('Model Performance')
-            plt.tight_layout()
-            st.pyplot(fig)
-        
-        with col2:
-            st.markdown("###  ข้อมูลโมเดล")
-            st.write(f"**Task:** {info['task']}")
-            st.write(f"**Target:** {info['target_column']}")
-            st.write(f"**Features:** {len(info['feature_names'])} ตัว")
-            if info['classes']:
-                st.write(f"**Classes:** {info['classes']}")
-    else:
-        st.warning("⚠️ ไม่พบไฟล์ model_info.pkl")
-
-# ============================================
-# 🎯 KNN
-# ============================================
-
-elif app_mode == "🎯 KNN":
-    st.title("🎯 K-Nearest Neighbor")
+    # Prepare input data
+    input_data = {
+        'student_id': student_id,
+        'gender': gender,
+        'study_time_hours': study_time_hours,
+        'attendance_percent': attendance_percent,
+        'sleep_hours': sleep_hours,
+        'parental_education': parental_education,
+        'internet_access': internet_access,
+        'extracurricular_activities': extracurricular_activities,
+        'part_time_job': part_time_job,
+        'previous_grade': previous_grade,
+        'final_exam_score': final_exam_score
+    }
     
-    if models and all(k in models for k in ['knn', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        st.markdown("### กรอกข้อมูลเพื่อทำนาย")
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'knn_{feat}')
-        
-        if st.button("🔮 ทำนายผล"):
-            df_input = pd.DataFrame([input_data])
-            # จัดคอลัมน์ให้ตรงกับตอน train
-            df_input = df_input.reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            pred = models['knn'].predict(scaled)
-            
-            if info['classes']:
-                result = info['classes'][pred[0]]
-                st.success(f"✅ ผลการทำนาย: **{result}**")
-            else:
-                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
-    else:
-        st.error("⚠️ ไม่พบไฟล์โมเดล KNN")
-
-# ============================================
-# 🌳 Decision Tree
-# ============================================
-
-elif app_mode == "🌳 Decision Tree":
-    st.title("🌳 Decision Tree")
-    
-    if models and all(k in models for k in ['dt', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'dt_{feat}')
-        
-        if st.button("🔮 ทำนายผล"):
-            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            pred = models['dt'].predict(scaled)
-            
-            if info['classes']:
-                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
-            else:
-                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
-            
-            # Feature Importance
-            if hasattr(models['dt'], 'feature_importances_'):
-                st.markdown("### 📊 ความสำคัญของ Features")
-                imp_df = pd.DataFrame({
-                    'Feature': features,
-                    'Importance': models['dt'].feature_importances_
-                }).sort_values('Importance', ascending=True)
-                st.bar_chart(imp_df.set_index('Feature'))
-    else:
-        st.error("️ ไม่พบไฟล์โมเดล")
-
-# ============================================
-# ⚡ SVM
-# ============================================
-
-elif app_mode == "⚡ SVM":
-    st.title("⚡ Support Vector Machine")
-    
-    if models and all(k in models for k in ['svm', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'svm_{feat}')
-        
-        if st.button("🔮 ทำนายผล"):
-            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            pred = models['svm'].predict(scaled)
-            
-            if info['classes']:
-                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
-            else:
-                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
-    else:
-        st.error("⚠️ ไม่พบไฟล์โมเดล")
-
-# ============================================
-# 🌲 Random Forest
-# ============================================
-
-elif app_mode == " Random Forest":
-    st.title(" Random Forest (Ensemble)")
-    
-    if models and all(k in models for k in ['rf', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'rf_{feat}')
-        
-        if st.button("🔮 ทำนายผล"):
-            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            pred = models['rf'].predict(scaled)
-            
-            if info['classes']:
-                st.success(f"✅ ผลการทำนาย: **{info['classes'][pred[0]]}**")
-            else:
-                st.success(f"✅ ผลการทำนาย: **{pred[0]:.4f}**")
-            
-            if hasattr(models['rf'], 'feature_importances_'):
-                st.markdown("### 📊 Feature Importance")
-                imp_df = pd.DataFrame({
-                    'Feature': features,
-                    'Importance': models['rf'].feature_importances_
-                }).sort_values('Importance', ascending=True)
-                st.bar_chart(imp_df.set_index('Feature'))
-    else:
-        st.error("⚠️ ไม่พบไฟล์โมเดล")
-
-# ============================================
-# 📈 Regression
-# ============================================
-
-elif app_mode == "📈 Regression":
-    st.title("📈 Linear Regression")
-    
-    if models and all(k in models for k in ['lr', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'lr_{feat}')
-        
-        if st.button("🔮 ทำนายค่า"):
-            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            pred = models['lr'].predict(scaled)
-            st.success(f"✅ ค่าที่ทำนายได้: **{pred[0]:.4f}**")
-    else:
-        st.error("️ ไม่พบไฟล์โมเดล")
-
-# ============================================
-# 🔵 K-Means
-# ============================================
-
-elif app_mode == "🔵 K-Means":
-    st.title("🔵 K-Means Clustering")
-    
-    if models and all(k in models for k in ['kmeans', 'scaler', 'info']):
-        info = models['info']
-        features = info['feature_names']
-        
-        input_data = {}
-        cols = st.columns(2)
-        for i, feat in enumerate(features):
-            with cols[i % 2]:
-                input_data[feat] = st.number_input(feat, value=0.0, key=f'km_{feat}')
-        
-        if st.button("🔮 จัดกลุ่ม"):
-            df_input = pd.DataFrame([input_data]).reindex(columns=features, fill_value=0)
-            scaled = models['scaler'].transform(df_input)
-            cluster = models['kmeans'].predict(scaled)
-            st.success(f"✅ ข้อมูลนี้อยู่ใน Cluster: **{cluster[0]}**")
-        
-        # Visualize clusters
-        if uploaded_file:
-            st.markdown("---")
-            st.markdown("### 📊 Visualization จากไฟล์ที่อัพโหลด")
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file)
-            
-            X = df.drop(columns=[info['target_column']])
-            X = pd.get_dummies(X, drop_first=True)
-            X_scaled = models['scaler'].transform(X)
-            labels = models['kmeans'].predict(X_scaled)
-            
-            fig, ax = plt.subplots(figsize=(8, 5))
-            scatter = ax.scatter(X_scaled[:, 0], X_scaled[:, 1], 
-                                c=labels, cmap='viridis', alpha=0.6)
-            ax.scatter(models['kmeans'].cluster_centers_[:, 0], 
-                      models['kmeans'].cluster_centers_[:, 1],
-                      c='red', s=200, marker='X', label='Centroids')
-            ax.set_xlabel(features[0] if len(features) > 0 else 'Feature 1')
-            ax.set_ylabel(features[1] if len(features) > 1 else 'Feature 2')
-            ax.legend()
-            ax.set_title('K-Means Clustering')
-            st.pyplot(fig)
-    else:
-        st.error("⚠️ ไม่พบไฟล์โมเดล")
-
-# ============================================
-# 📊 แสดงข้อมูลจาก Excel
-# ============================================
-
-if uploaded_file is not None:
-    st.sidebar.success(f"✅ โหลดไฟล์: {uploaded_file.name}")
-    
-    if uploaded_file.name.endswith('.csv'):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-    
+    # Display input summary
     st.markdown("---")
-    st.markdown("### 📄 ข้อมูลจากไฟล์ Excel")
-    st.dataframe(df.head(10))
+    st.markdown("### 📋 สรุปข้อมูลที่กรอก")
+    input_df = pd.DataFrame([input_data])
+    st.dataframe(input_df, use_container_width=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### 📊 ขนาดข้อมูล")
-        st.write(f"Rows: {df.shape[0]}")
-        st.write(f"Columns: {df.shape[1]}")
-    with col2:
-        st.markdown("### 📈 สรุปสถิติ")
-        st.dataframe(df.describe())
+    # Make prediction
+    if models and 'scaler' in models and 'info' in models:
+        try:
+            # Get feature names from model info
+            feature_names = models['info'].get('feature_names', [])
+            
+            # Create DataFrame with correct features
+            # Convert categorical to dummy variables
+            input_df_processed = pd.get_dummies(input_df, drop_first=True)
+            
+            # Ensure all required columns exist
+            for col in feature_names:
+                if col not in input_df_processed.columns:
+                    input_df_processed[col] = 0
+            
+            # Reorder columns to match training data
+            input_df_processed = input_df_processed[feature_names]
+            
+            # Scale the data
+            scaled_data = models['scaler'].transform(input_df_processed)
+            
+            # Select model based on choice
+            model_map = {
+                "K-Nearest Neighbor": 'knn',
+                "Decision Tree": 'dt',
+                "SVM": 'svm',
+                "Random Forest": 'rf',
+                "Linear Regression": 'lr'
+            }
+            
+            model_key = model_map.get(model_choice, 'rf')
+            
+            if model_key in models:
+                prediction = models[model_key].predict(scaled_data)
+                
+                # Display result
+                st.markdown("---")
+                st.markdown("### 🎯 ผลการทำนาย")
+                
+                if models['info'].get('task') == 'classification':
+                    classes = models['info'].get('classes', ['A', 'B', 'C', 'D', 'F'])
+                    predicted_grade = classes[int(prediction[0])] if prediction[0] < len(classes) else prediction[0]
+                    
+                    # Color code the grade
+                    grade_color = {
+                        'A': '#4CAF50',
+                        'B': '#8BC34A',
+                        'C': '#FFC107',
+                        'D': '#FF9800',
+                        'F': '#F44336'
+                    }.get(str(predicted_grade), '#9E9E9E')
+                    
+                    st.markdown(f"""
+                    <div class="metric-card" style="background: {grade_color}; text-align: center; padding: 30px;">
+                        <h2 style="color: white; margin: 0;">เกรดที่預測: {predicted_grade}</h2>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="metric-card" style="text-align: center; padding: 30px;">
+                        <h2 style="color: white; margin: 0;">คะแนนที่預測: {prediction[0]:.2f}</h2>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.success("✅ ทำนายผลสำเร็จ!")
+                
+            else:
+                st.error(f"️ ไม่พบโมเดล {model_choice}")
+                
+        except Exception as e:
+            st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
+            st.info(" ตรวจสอบว่าไฟล์โมเดลถูกต้องและครบถ้วน")
+    else:
+        st.error("⚠️ ไม่พบไฟล์โมเดล กรุณาอัพโหลดไฟล์ .pkl ในโฟลเดอร์ models/")
+        st.info("""
+        **ไฟล์ที่ต้องการ:**
+        - knn_model.pkl
+        - decision_tree_model.pkl
+        - svm_model.pkl
+        - random_forest_model.pkl
+        - linear_regression_model.pkl
+        - scaler.pkl
+        - model_info.pkl
+        """)
 
 # Footer
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #95a5a6;'><p>Created with ❤️ using Streamlit</p></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #95a5a6;'><p>Created with ❤️ for Student Grade Prediction</p></div>", unsafe_allow_html=True)
