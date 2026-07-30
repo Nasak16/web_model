@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ========== Custom CSS - Modern Design ==========
+# ========== Custom CSS - Fixed Contrast ==========
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -46,19 +46,20 @@ st.markdown("""
     }
     
     .header-section h1 {
-        color: white;
+        color: #ffffff !important;
         font-size: 3.5rem;
         font-weight: 800;
         margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         letter-spacing: -1px;
     }
     
     .header-section p {
-        color: rgba(255,255,255,0.9);
+        color: #ffffff !important;
         font-size: 1.3rem;
         margin-top: 0.5rem;
         font-weight: 400;
+        opacity: 1;
     }
     
     /* Main container */
@@ -70,19 +71,18 @@ st.markdown("""
     
     /* Cards */
     .card {
-        background: rgba(255, 255, 255, 0.98);
+        background: #ffffff !important;
         border-radius: 24px;
         padding: 2.5rem;
         margin-bottom: 2rem;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid #e2e8f0;
     }
     
     .card-title {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #1e293b;
+        color: #1e293b !important;
         margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
@@ -97,6 +97,13 @@ st.markdown("""
         padding: 2rem;
         border-radius: 20px;
         margin: 1.5rem 0;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .input-section h3 {
+        color: #1e293b !important;
+        font-weight: 600;
+        margin-bottom: 1rem;
     }
     
     .stNumberInput > div > div > input {
@@ -107,6 +114,7 @@ st.markdown("""
         font-weight: 500;
         transition: all 0.3s ease;
         background: white;
+        color: #1e293b !important;
     }
     
     .stNumberInput > div > div > input:focus {
@@ -120,12 +128,13 @@ st.markdown("""
         border: 2px solid #cbd5e1;
         background: white;
         transition: all 0.3s ease;
+        color: #1e293b !important;
     }
     
     /* Button */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: #ffffff !important;
         border: none;
         border-radius: 16px;
         padding: 1.2rem 3rem;
@@ -177,7 +186,7 @@ st.markdown("""
     }
     
     .result-label {
-        color: rgba(255,255,255,0.95);
+        color: #ffffff !important;
         font-size: 1.2rem;
         font-weight: 600;
         margin-bottom: 1rem;
@@ -186,7 +195,7 @@ st.markdown("""
     }
     
     .result-grade {
-        color: white;
+        color: #ffffff !important;
         font-size: 6rem;
         font-weight: 800;
         line-height: 1;
@@ -197,7 +206,7 @@ st.markdown("""
     }
     
     .result-model {
-        color: rgba(255,255,255,0.9);
+        color: #ffffff !important;
         font-size: 1rem;
         font-weight: 500;
         position: relative;
@@ -214,7 +223,7 @@ st.markdown("""
     
     .metric-item {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: #ffffff !important;
         padding: 1.5rem;
         border-radius: 16px;
         text-align: center;
@@ -230,12 +239,14 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 0.5rem;
+        color: #ffffff !important;
     }
     
     .metric-label {
         font-size: 0.95rem;
-        opacity: 0.9;
+        opacity: 1;
         font-weight: 500;
+        color: #ffffff !important;
     }
     
     /* Probability chart */
@@ -245,13 +256,19 @@ st.markdown("""
         border-radius: 20px;
         margin-top: 2rem;
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .chart-container h3 {
+        color: #1e293b !important;
+        font-weight: 600;
     }
     
     /* Info badges */
     .badge {
         display: inline-block;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: #ffffff !important;
         padding: 0.5rem 1rem;
         border-radius: 20px;
         font-size: 0.9rem;
@@ -265,6 +282,12 @@ st.markdown("""
         background: linear-gradient(90deg, transparent 0%, #667eea 50%, transparent 100%);
         margin: 2rem 0;
         border: none;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: #ffffff !important;
+        color: #1e293b !important;
     }
     
     /* Responsive */
@@ -298,7 +321,7 @@ def load_all():
 models, scaler, test_data = load_all()
 
 if models is None or not models or test_data is None:
-    st.error("⚠️ เกิดข้อผิดพลาดในการโหลดโมเดล")
+    st.error("️ เกิดข้อผิดพลาดในการโหลดโมเดล")
     st.stop()
 
 feature_names = test_data['feature_names']
@@ -317,7 +340,7 @@ st.markdown('<div class="main-wrapper">', unsafe_allow_html=True)
 
 # Quick Stats
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="card-title">📊 ข้อมูลระบบ</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-title"> ข้อมูลระบบ</div>', unsafe_allow_html=True)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -353,7 +376,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # Prediction Section
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="card-title">🔮 ทำนายเกรดนักเรียน</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-title"> ทำนายเกรดนักเรียน</div>', unsafe_allow_html=True)
 
 # แยก features
 numeric_features = [f for f in feature_names if '_' not in f]
@@ -400,7 +423,7 @@ with st.form("prediction_form", clear_on_submit=False):
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    submitted = st.form_submit_button(" ทำนายเกรดตอนนี้", use_container_width=True)
+    submitted = st.form_submit_button("🚀 ทำนายเกรดตอนนี้", use_container_width=True)
 
 if submitted:
     # Prepare and predict
@@ -430,7 +453,7 @@ if submitted:
         proba = model.predict_proba(input_scaled)[0]
         
         st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown("###  ความน่าจะเป็นของแต่ละเกรด")
+        st.markdown("### 📊 ความน่าจะเป็นของแต่ละเกรด")
         
         prob_df = pd.DataFrame({
             'Grade': target_names,
@@ -486,9 +509,9 @@ with st.expander("ℹ️ เลือกดูโมเดลอื่นๆ", e
 
 # Footer
 st.markdown("""
-<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem; margin-top: 2rem;">
-    <p style="font-size: 1rem; margin: 0;">Built with ❤️ using Streamlit + Machine Learning</p>
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.8;">© 2024 AI Grade Predictor System</p>
+<div style="text-align: center; color: #ffffff; padding: 2rem; margin-top: 2rem;">
+    <p style="font-size: 1rem; margin: 0; color: #ffffff !important;">Built with ❤️ using Streamlit + Machine Learning</p>
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9; color: #ffffff !important;">© 2024 AI Grade Predictor System</p>
 </div>
 """, unsafe_allow_html=True)
 
