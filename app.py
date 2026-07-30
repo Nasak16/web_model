@@ -425,43 +425,87 @@ elif page == "📊 เปรียบเทียบโมเดล":
                 st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
 
 # ============================================
-# หน้า 4: K-Means Clustering
+# หน้า 4: K-Means Clustering (แก้ไขแล้ว)
 # ============================================
 elif page == "🔵 K-Means Clustering":
     st.markdown("### 🔵 K-Means Clustering - จัดกลุ่มนักเรียน")
     if 'kmeans' in models:
+        st.markdown("กรอกข้อมูลหลักเพื่อประเมินการจัดกลุ่ม (ระบบจะเติมข้อมูลอื่นๆ ให้โดยอัตโนมัติ)")
         col1, col2 = st.columns(2)
         with col1:
-            study_time = st.number_input("⏰ Study Time", min_value=0.0, max_value=12.0, value=4.0, step=0.5, key='km_st')
-            attendance = st.number_input("📊 Attendance %", min_value=0.0, max_value=100.0, value=85.0, step=1.0, key='km_att')
-            sleep = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='km_sl')
-            prev_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
+            study_time = st.number_input("⏰ Study Time (ชม./วัน)", min_value=0.0, max_value=12.0, value=4.0, step=0.5, key='km_st')
+            attendance = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0, key='km_att')
+            sleep = st.number_input("😴 Sleep Hours (ชม./วัน)", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='km_sl')
         with col2:
-            final_exam = st.number_input("📝 Final Exam", min_value=0.0, max_value=100.0, value=80.0, step=0.1, key='km_fe')
+            prev_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
+            final_exam = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=80.0, step=0.1, key='km_fe')
             st.markdown("### 🎯 จำนวน Cluster")
             n_clusters = st.slider("เลือกจำนวนกลุ่ม", 2, 5, 3)
         
         if st.button("🔵 จัดกลุ่มข้อมูล", use_container_width=True):
-            input_data = np.array([[study_time, attendance, sleep, prev_grade, final_exam]])
-            cluster = models['kmeans'].predict(input_data)[0]
+            with st.spinner('กำลังประมวลผล...'):
+                # 1. สร้าง DataFrame ให้มีโครงสร้างตรงกับตอน Train (เติมค่า Default สำหรับฟิลด์ที่ไม่ได้ถาม)
+                input_dict = {
+                    'student_id': [1],
+                    'gender': ['Male'], # ค่าเริ่มต้น
+                    'study_time_hours': [study_time],
+                    'attendance_percent': [attendance],
+                    'sleep_hours': [sleep],
+                    'parental_education': ['Bachelors'], # ค่าเริ่มต้น
+                    'internet_access': ['Yes'], # ค่าเริ่มต้น
+                    'extracurricular_activities': ['Yes'], # ค่าเริ่มต้น
+                    'part_time_job': ['No'], # ค่าเริ่มต้น
+                    'previous_grade': [prev_grade],
+                    'final_exam_score': [final_exam]
+                }
+                input_df = pd.DataFrame(input_dict)
+                
+                # 2. แปลงข้อมูล Categorical เป็นตัวเลข (One-Hot Encoding) เหมือนตอน Train
+                input_processed = pd.get_dummies(input_df, drop_first=True)
+                
+                # 3. จัดเรียงคอลัมน์ให้ตรงกับ feature_names ที่โมเดลจำไว้
+                feature_names = models['info'].get('feature_names', [])
+                for col in feature_names:
+                    if col not in input_processed.columns:
+                        input_processed[col] = 0
+                        
+                # เรียงคอลัมน์ให้ตรงเป๊ะ
+                input_processed = input_processed[feature_names]
+                
+                # 4. ทำนายผล (K-Means ใน Colab ถูก train ด้วยข้อมูลที่ไม่ได้ Scale ดังนั้นไม่ต้องใส่ scaler)
+                cluster = int(models['kmeans'].predict(input_processed)[0])
+            
             st.markdown("---")
             st.markdown("### 🎯 ผลการจัดกลุ่ม")
             st.markdown(f"""
             <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 15px;">
                 <h1 style="color: white; margin: 0; font-size: 72px;">Cluster {cluster}</h1>
-                <p style="color: white; margin: 10px 0; font-size: 18px;">นักเรียนนี้อยู่ในกลุ่มที่ {cluster + 1}</p>
+                <p style="color: white; margin: 10px 0; font-size: 18px;">นักเรียนที่มีลักษณะนี้อยู่ในกลุ่มที่ {cluster + 1}</p>
             </div>
             """, unsafe_allow_html=True)
             
+            # แสดงลักษณะของ Cluster
             if hasattr(models['kmeans'], 'cluster_centers_'):
                 st.markdown("### 📊 ลักษณะค่าเฉลี่ยของแต่ละ Cluster")
-                centers = pd.DataFrame(models['kmeans'].cluster_centers_, columns=['Study Time', 'Attendance', 'Sleep', 'Previous Grade', 'Final Exam'])
-                st.dataframe(centers, use_container_width=True)
+                # พยายามจับคู่ชื่อคอลัมน์เดิม (เฉพาะตัวเลข) เพื่อความสวยงาม
+                numeric_features = [f for f in feature_names if not any(x in f for x in ['gender', 'parental', 'internet', 'extracurricular', 'part_time'])]
+                display_cols = numeric_features[:5] if len(numeric_features) >= 5 else numeric_features
                 
+                centers = pd.DataFrame(
+                    models['kmeans'].cluster_centers_, 
+                    columns=feature_names
+                )[display_cols]
+                
+                # เปลี่ยนชื่อคอลัมน์ให้อ่านง่าย
+                center_display = centers.copy()
+                center_display.columns = ['Study Time', 'Attendance', 'Sleep', 'Previous Grade', 'Final Exam']
+                st.dataframe(center_display, use_container_width=True)
+                
+                # Visualization
                 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-                axes[0].scatter(centers['Study Time'], centers['Attendance'], c=range(len(centers)), s=200, cmap='viridis')
+                axes[0].scatter(centers['study_time_hours'], centers['attendance_percent'], c=range(len(centers)), s=200, cmap='viridis')
                 axes[0].set_title('Study Time vs Attendance')
-                axes[1].scatter(centers['Previous Grade'], centers['Final Exam'], c=range(len(centers)), s=200, cmap='viridis')
+                axes[1].scatter(centers['previous_grade'], centers['final_exam_score'], c=range(len(centers)), s=200, cmap='viridis')
                 axes[1].set_title('Previous vs Final Grade')
                 st.pyplot(fig)
         
@@ -471,15 +515,22 @@ elif page == "🔵 K-Means Clustering":
         if uploaded_file:
             df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
             st.dataframe(df.head())
-            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            if len(numeric_cols) >= 2:
-                labels = models['kmeans'].predict(df[numeric_cols].values)
-                df['Cluster'] = labels
-                st.markdown("### 📊 ผลการจัดกลุ่ม")
-                st.dataframe(df)
+            
+            # ประมวลผลไฟล์ที่อัพโหลด
+            X_upload = df.drop(columns=[models['info'].get('target_column', df.columns[-1])], errors='ignore')
+            X_upload_processed = pd.get_dummies(X_upload, drop_first=True)
+            
+            for col in feature_names:
+                if col not in X_upload_processed.columns:
+                    X_upload_processed[col] = 0
+            X_upload_processed = X_upload_processed[feature_names]
+            
+            labels = models['kmeans'].predict(X_upload_processed)
+            df['Cluster'] = labels
+            st.markdown("### 📊 ผลการจัดกลุ่ม")
+            st.dataframe(df)
     else:
         st.error("⚠️ ไม่พบไฟล์ kmeans_model.pkl")
-
 # ============================================
 # หน้า 5: ข้อมูลโมเดล
 # ============================================
