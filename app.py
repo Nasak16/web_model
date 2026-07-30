@@ -348,3 +348,186 @@ with st.form("prediction_form", clear_on_submit=False):
                 format="%.1f",
                 key=f"num_{feat}"
             )
+    
+    if categorical_features:
+        st.markdown("### 🏷️ ข้อมูลเพิ่มเติม")
+        cat_cols = st.columns(2)
+        for i, (base_name, categories) in enumerate(categorical_features.items()):
+            with cat_cols[i % 2]:
+                options = categories if categories else ['Yes', 'No']
+                inputs[base_name] = st.selectbox(
+                    base_name.replace('_', ' ').title(),
+                    options,
+                    index=0,
+                    key=f"cat_{base_name}"
+                )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    submitted = st.form_submit_button("🚀 ทำนายด้วยทุกโมเดล", use_container_width=True)
+
+# ========== Results ==========
+if submitted:
+    # Prepare input
+    input_df = pd.DataFrame([inputs])
+    input_df = pd.get_dummies(input_df, drop_first=True)
+    input_df = input_df.reindex(columns=feature_names, fill_value=0)
+    input_scaled = scaler.transform(input_df)
+    
+    # Predict with ALL models
+    predictions = {}
+    confidences = {}
+    
+    for name, model in models.items():
+        pred = model.predict(input_scaled)[0]
+        predictions[name] = pred
+        
+        # Get confidence/probability
+        if hasattr(model, 'predict_proba'):
+            proba = model.predict_proba(input_scaled)[0]
+            confidences[name] = float(proba[pred])
+        else:
+            confidences[name] = None
+    
+    # ========== FINAL RESULT (Majority Vote) ==========
+    # นับว่าแต่ละ grade ได้กี่โหวต (ไม่รวม K-Means เพราะเป็น clustering)
+    vote_counter = Counter()
+    for name, pred in predictions.items():
+        if name != 'K-Means':
+            pred_label = target_names[int(pred)] if int(pred) < len(target_names) else str(pred)
+            vote_counter[pred_label] += 1
+    
+    final_grade = vote_counter.most_common(1)[0][0]
+    final_votes = vote_counter.most_common(1)[0][1]
+    total_models = len([n for n in models.keys() if n != 'K-Means'])
+    
+    st.markdown(f"""
+    <div class="final-result">
+        <div class="final-result-label"> ผลสรุปจากทุกโมเดล (Majority Vote)</div>
+        <div class="final-result-grade">{final_grade}</div>
+        <div class="final-result-detail">
+            {final_votes} จาก {total_models} โมเดล ทำนายได้เกรดนี้
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ========== ALL MODEL RESULTS ==========
+    st.markdown('<div class="section-title-dark"> ผลการทำนายจากแต่ละโมเดล</div>', unsafe_allow_html=True)
+    
+    # แสดงผลเป็น grid
+    result_html = '<div class="result-grid">'
+    
+    for name in sorted(models.keys()):
+        pred = predictions[name]
+        pred_label = target_names[int(pred)] if int(pred) < len(target_names) else str(pred)
+        confidence = confidences[name]
+        
+        # สีของ card ตามความแม่นยำ
+        if name in model_accuracies:
+            acc = model_accuracies[name]
+            acc_display = f"Accuracy: {acc*100:.1f}%"
+            if acc >= 0.9:
+                border_color = "#10b981"  # เขียว
+            elif acc >= 0.7:
+                border_color = "#f59e0b"  # เหลือง
+            else:
+                border_color = "#ef4444"  # แดง
+        else:
+            acc_display = "Unsupervised"
+            border_color = "#667eea"  # ม่วง
+        
+        confidence_text = ""
+        if confidence is not None:
+            confidence_text = f"ความมั่นใจ: {confidence*100:.1f}%"
+        elif name == 'K-Means':
+            confidence_text = f"Cluster: {pred_label}"
+        
+        result_html += f"""
+        <div class="model-result-card" style="border-left-color: {border_color};">
+            <div class="model-name">{name}</div>
+            <div class="model-prediction">{pred_label}</div>
+            <div class="model-confidence">{confidence_text}</div>
+            <div style="text-align: center;">
+                <span class="model-accuracy">{acc_display}</span>
+            </div>
+        </div>
+        """
+    
+    result_html += '</div>'
+    st.markdown(result_html, unsafe_allow_html=True)
+    
+    # ========== COMPARISON CHART ==========
+    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    st.markdown("### 📊 เปรียบเทียบผลการทำนาย")
+    
+    # กราฟ 1: เกรดที่ทำนายได้จากแต่ละโมเดล
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # กราฟซ้าย: Bar chart แสดงเกรดที่ทำนายได้
+    model_names_list = [n for n in sorted(models.keys()) if n != 'K-Means']
+    pred_labels = [target_names[int(predictions[n])] if int(predictions[n]) < len(target_names) else str(predictions[n]) for n in model_names_list]
+    
+    colors = ['#667eea' if p == final_grade else '#cbd5e1' for p in pred_labels]
+    axes[0].barh(model_names_list, [1]*len(model_names_list), color=colors, height=0.6)
+    axes[0].set_yticks(range(len(model_names_list)))
+    axes[0].set_yticklabels(model_names_list, fontsize=11, fontweight='600')
+    axes[0].set_xlabel('เกรดที่ทำนายได้', fontsize=12, fontweight='700', color='#0f172a')
+    axes[0].set_title('🎯 เกรดที่ทำนายได้จากแต่ละโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
+    axes[0].set_xlim(0, 1.5)
+    axes[0].set_xticks([])
+    
+    # แสดงเกรดบน bar
+    for i, (model, label) in enumerate(zip(model_names_list, pred_labels)):
+        axes[0].text(1.05, i, label, va='center', fontsize=12, fontweight='700', color='#0f172a')
+    
+    # กราฟขวา: Accuracy comparison
+    if model_accuracies:
+        acc_models = sorted(model_accuracies.keys(), key=lambda x: model_accuracies[x], reverse=True)
+        acc_values = [model_accuracies[m]*100 for m in acc_models]
+        acc_colors = ['#10b981' if m == max(model_accuracies, key=model_accuracies.get) else '#667eea' for m in acc_models]
+        
+        bars = axes[1].barh(acc_models, acc_values, color=acc_colors, height=0.6)
+        axes[1].set_xlabel('Accuracy (%)', fontsize=12, fontweight='700', color='#0f172a')
+        axes[1].set_title('📈 ความแม่นยำของแต่ละโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
+        axes[1].set_xlim(0, 100)
+        axes[1].grid(axis='x', alpha=0.3, linestyle='--')
+        
+        for i, (model, acc) in enumerate(zip(acc_models, acc_values)):
+            axes[1].text(acc + 1, i, f"{acc:.1f}%", va='center', fontsize=11, fontweight='700', color='#0f172a')
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+    
+    # ========== VOTE DISTRIBUTION ==========
+    st.markdown("### ️ การกระจายโหวตของเกรด")
+    
+    vote_df = pd.DataFrame({
+        'Grade': list(vote_counter.keys()),
+        'Votes': list(vote_counter.values())
+    }).sort_values('Votes', ascending=True)
+    
+    fig2, ax2 = plt.subplots(figsize=(10, 5))
+    vote_colors = ['#10b981' if g == final_grade else '#667eea' for g in vote_df['Grade']]
+    bars2 = ax2.barh(vote_df['Grade'], vote_df['Votes'], color=vote_colors, height=0.5, edgecolor='white', linewidth=2)
+    ax2.set_xlabel('จำนวนโหวต', fontsize=12, fontweight='700', color='#0f172a')
+    ax2.set_title('การกระจายโหวตจากทุกโมเดล', fontsize=14, fontweight='800', color='#0f172a', pad=15)
+    ax2.set_xlim(0, total_models + 1)
+    ax2.grid(axis='x', alpha=0.3, linestyle='--')
+    
+    for i, (idx, row) in enumerate(vote_df.iterrows()):
+        ax2.text(row['Votes'] + 0.1, i, f"{row['Votes']} โหวต", va='center', fontsize=12, fontweight='700', color='#0f172a')
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== Footer ==========
+st.markdown("""
+<div style="text-align: center; padding: 2rem; margin-top: 2rem;">
+    <p style="font-size: 1rem; margin: 0; color: #94a3b8;">Built with ❤️ using Streamlit + Machine Learning</p>
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #64748b;">© 2024 AI Grade Predictor System</p>
+</div>
+""", unsafe_allow_html=True)
