@@ -112,20 +112,37 @@ if page == "👨‍💻 ข้อมูลผู้พัฒนา":
     """)
 
 # ============================================
-# หน้า 2: ทำนายผล
+# หน้า 2: ทำนายผล (ปรับปรุง Layout)
 # ============================================
 elif page == "🔮 ทำนายผล":
     st.markdown("### 🎯 ทำนายเกรดด้วยโมเดลต่างๆ")
+    
+    # เลือกโมเดล
     model_choice = st.selectbox("เลือกโมเดล", ["K-Nearest Neighbor", "Decision Tree", "SVM", "Random Forest", "Linear Regression"])
     
+    # สำหรับ KNN แสดง Slider เลือกค่า K ตั้งแต่ต้น
+    if model_choice == "K-Nearest Neighbor":
+        st.markdown("### ⚙️ ตั้งค่าพารามิเตอร์ KNN")
+        k_value = st.slider(
+            "🔢 เลือกจำนวน K (Neighbors)",
+            min_value=1,
+            max_value=20,
+            value=getattr(models['knn'], 'n_neighbors', 5) if 'knn' in models else 5,
+            step=1
+        )
+        st.markdown("---")
+    
+    # ฟอร์มกรอกข้อมูล - แบ่งเป็น 2 คอลัมน์
     col1, col2 = st.columns(2)
+    
     with col1:
-        student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1)
+        student_id = st.number_input(" Student ID", min_value=0, value=1001, step=1)
         gender = st.selectbox("👤 Gender", ["Male", "Female"])
         study_time_hours = st.number_input("⏰ Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
         attendance_percent = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5)
         parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"])
+    
     with col2:
         internet_access = st.selectbox("🌐 Internet Access", ["Yes", "No"])
         extracurricular_activities = st.selectbox("🎯 Extracurricular", ["Yes", "No"])
@@ -133,7 +150,7 @@ elif page == "🔮 ทำนายผล":
         previous_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=88.5, step=0.1)
         final_exam_score = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=92.0, step=0.1)
     
-    if st.button("🔮 ทำนายผล", width='stretch'):
+    if st.button(" ทำนายผล", width='stretch'):
         input_data = pd.DataFrame({
             'student_id': [student_id], 'gender': [gender], 'study_time_hours': [study_time_hours],
             'attendance_percent': [attendance_percent], 'sleep_hours': [sleep_hours],
@@ -160,8 +177,24 @@ elif page == "🔮 ทำนายผล":
                 
                 if model_key in models:
                     start_time = time.time()
-                    prediction = models[model_key].predict(scaled_data)
-                    exec_time = time.time() - start_time
+                    
+                    # สำหรับ KNN ใช้ค่า K ที่เลือก
+                    if model_choice == "K-Nearest Neighbor" and 'X_train' in models and 'y_train' in models:
+                        with st.spinner(f'🔄 กำลัง retrain โมเดลด้วย K={k_value}...'):
+                            from sklearn.neighbors import KNeighborsClassifier
+                            active_model = KNeighborsClassifier(
+                                n_neighbors=k_value, 
+                                metric=models['knn'].metric, 
+                                weights=models['knn'].weights
+                            )
+                            active_model.fit(models['X_train'], models['y_train'])
+                            prediction = active_model.predict(scaled_data)
+                            exec_time = time.time() - start_time
+                            st.success(f"✅ Retrain สำเร็จด้วย K={k_value}")
+                    else:
+                        prediction = models[model_key].predict(scaled_data)
+                        exec_time = time.time() - start_time
+                        active_model = models[model_key]
                     
                     st.markdown("---")
                     st.markdown(f"### 🎯 ผลการทำนายจาก {model_choice}")
@@ -170,36 +203,6 @@ elif page == "🔮 ทำนายผล":
                     
                     # --- 1. KNN Display ---
                     if model_choice == "K-Nearest Neighbor":
-                        current_k = getattr(models['knn'], 'n_neighbors', 5)
-                        
-                        st.markdown("### ⚙️ ตั้งค่าพารามิเตอร์ KNN")
-                        k_value = st.slider(
-                            "🔢 เลือกจำนวน K (Neighbors)",
-                            min_value=1,
-                            max_value=20,
-                            value=current_k,
-                            step=1
-                        )
-                        
-                        active_model = models['knn']
-                        
-                        if k_value != current_k:
-                            if 'X_train' in models and 'y_train' in models:
-                                with st.spinner(f'🔄 กำลัง retrain โมเดลด้วย K={k_value}...'):
-                                    from sklearn.neighbors import KNeighborsClassifier
-                                    active_model = KNeighborsClassifier(
-                                        n_neighbors=k_value, 
-                                        metric=models['knn'].metric, 
-                                        weights=models['knn'].weights
-                                    )
-                                    active_model.fit(models['X_train'], models['y_train'])
-                                    prediction = active_model.predict(scaled_data)
-                                    exec_time = time.time() - start_time
-                                    st.success(f"✅ Retrain สำเร็จด้วย K={k_value}")
-                            else:
-                                st.warning(f"⚠️ ไม่พบไฟล์ข้อมูล Training ระบบจึงแสดงผลด้วยค่า K เดิม ({current_k})")
-                                k_value = current_k
-                        
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         
                         st.markdown(f"""
@@ -227,6 +230,7 @@ elif page == "🔮 ทำนายผล":
                                 </div>
                                 """, unsafe_allow_html=True)
                         
+                        # แสดงพารามิเตอร์
                         st.markdown("### 📋 พารามิเตอร์ปัจจุบัน")
                         p_col1, p_col2, p_col3 = st.columns(3)
                         with p_col1:
@@ -343,7 +347,7 @@ elif page == "🔮 ทำนายผล":
                 else:
                     st.error(f"⚠️ ไม่พบโมเดล {model_choice}")
             except Exception as e:
-                st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
+                st.error(f"️ เกิดข้อผิดพลาด: {str(e)}")
         else:
             st.error("⚠️ ไม่พบไฟล์โมเดล กรุณาตรวจสอบโฟลเดอร์ models/")
 
