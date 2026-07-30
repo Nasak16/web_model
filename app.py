@@ -40,7 +40,7 @@ st.markdown("""
     h1, h2, h3 { color: #ffffff; }
     .param-box {
         background: #1e1e2e; padding: 15px; border-radius: 10px; margin: 10px 0;
-        border: 1px solid #333;
+        border: 1px solid #333; text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -79,7 +79,9 @@ def load_models():
             'knn': 'knn_model.pkl', 'dt': 'decision_tree_model.pkl',
             'svm': 'svm_model.pkl', 'rf': 'random_forest_model.pkl',
             'lr': 'linear_regression_model.pkl', 'kmeans': 'kmeans_model.pkl',
-            'scaler': 'scaler.pkl', 'info': 'model_info.pkl'
+            'scaler': 'scaler.pkl', 'info': 'model_info.pkl',
+            # เพิ่มไฟล์ข้อมูล Training สำหรับการ Retrain แบบ Real-time
+            'X_train': 'X_train_scaled.pkl', 'y_train': 'y_train.pkl'
         }
         for key, filename in files.items():
             path = os.path.join(model_dir, filename)
@@ -111,7 +113,7 @@ if page == "👨‍💻 ข้อมูลผู้พัฒนา":
     """)
 
 # ============================================
-# หน้า 2: ทำนายผล (ปรับปรุง UI ใหม่ทั้งหมด)
+# หน้า 2: ทำนายผล
 # ============================================
 elif page == "🔮 ทำนายผล":
     st.markdown("### 🎯 ทำนายเกรดด้วยโมเดลต่างๆ")
@@ -141,7 +143,7 @@ elif page == "🔮 ทำนายผล":
             'previous_grade': [previous_grade], 'final_exam_score': [final_exam_score]
         })
         
-        st.markdown("### 📋 ข้อมูลที่กรok")
+        st.markdown("### 📋 ข้อมูลที่กรอก")
         st.dataframe(input_data, use_container_width=True)
         
         if models and 'scaler' in models:
@@ -167,20 +169,56 @@ elif page == "🔮 ทำนายผล":
                     
                     classes = models['info'].get('classes', ['A', 'B', 'C', 'D', 'F'])
                     
-                    # --- 1. KNN Display ---
+                    # ==========================================
+                    # --- 1. KNN Display (พร้อม Slider เลือก K) ---
+                    # ==========================================
                     if model_choice == "K-Nearest Neighbor":
+                        current_k = getattr(models['knn'], 'n_neighbors', 5)
+                        
+                        st.markdown("### ⚙️ ตั้งค่าพารามิเตอร์ KNN")
+                        k_value = st.slider(
+                            "🔢 เลือกจำนวน K (Neighbors)",
+                            min_value=1,
+                            max_value=20,
+                            value=current_k,
+                            step=1
+                        )
+                        
+                        active_model = models['knn']
+                        
+                        # ถ้าผู้ใช้เปลี่ยนค่า K และมีข้อมูล training ให้ retrain แบบ Real-time
+                        if k_value != current_k:
+                            if 'X_train' in models and 'y_train' in models:
+                                with st.spinner(f'🔄 กำลัง retrain โมเดลด้วย K={k_value}...'):
+                                    from sklearn.neighbors import KNeighborsClassifier
+                                    active_model = KNeighborsClassifier(
+                                        n_neighbors=k_value, 
+                                        metric=models['knn'].metric, 
+                                        weights=models['knn'].weights
+                                    )
+                                    active_model.fit(models['X_train'], models['y_train'])
+                                    # ทำนายใหม่ด้วยโมเดลที่ retrain
+                                    prediction = active_model.predict(scaled_data)
+                                    exec_time = time.time() - start_time
+                                    st.success(f"✅ Retrain สำเร็จด้วย K={k_value}")
+                            else:
+                                st.warning(f"⚠️ ไม่พบไฟล์ข้อมูล Training (`X_train_scaled.pkl`, `y_train.pkl`) สำหรับ retrain โมเดลใหม่ ระบบจึงแสดงผลด้วยค่า K เดิมที่บันทึกไว้ ({current_k})")
+                                k_value = current_k
+                        
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
+                        
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่預測 (K-Nearest Neighbor)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (K-Nearest Neighbor, K={k_value})</p>
                         </div>
                         """, unsafe_allow_html=True)
+                        
                         st.info("💡 **KNN** ทำนายโดยดูจากเพื่อนบ้านที่ใกล้ที่สุด (K neighbors)")
                         
                         # Probability Bars
-                        if hasattr(models[model_key], 'predict_proba'):
-                            proba = models[model_key].predict_proba(scaled_data)[0]
+                        if hasattr(active_model, 'predict_proba'):
+                            proba = active_model.predict_proba(scaled_data)[0]
                             st.markdown("### 📊 ความน่าจะเป็นของแต่ละเกรด")
                             for cls, prob in zip(classes, proba):
                                 pct = int(prob * 100)
@@ -191,30 +229,31 @@ elif page == "🔮 ทำนายผล":
                                 <div style="display: flex; align-items: center; margin: 8px 0; padding: 8px; background: #1e1e2e; border-radius: 8px;">
                                     <span style="color: white; font-weight: bold; width: 30px;">{cls}:</span>
                                     <span style="color: {color}; margin: 0 10px; font-family: monospace; font-size: 14px;">{bar}</span>
-                                    <span style="color: white; font-weight: bold;">{pct}%</span each>
+                                    <span style="color: white; font-weight: bold;">{pct}%</span>
                                 </div>
                                 """, unsafe_allow_html=True)
                         
                         # Parameters
-                        st.markdown("### ⚙️ พารามิเตอร์ของโมเดล")
+                        st.markdown("### 📋 พารามิเตอร์ปัจจุบัน")
                         p_col1, p_col2, p_col3 = st.columns(3)
                         with p_col1:
-                            k_val = getattr(models[model_key], 'n_neighbors', 'N/A')
-                            st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🔢 K (Neighbors):</span><br><span style="color:#667eea; font-size:20px; font-weight:bold">{k_val}</span></div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🔢 K (Neighbors):</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{k_value}</span></div>', unsafe_allow_html=True)
                         with p_col2:
-                            metric = getattr(models[model_key], 'metric', 'N/A')
+                            metric = getattr(active_model, 'metric', 'N/A')
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">📐 Metric:</span><br><span style="color:#667eea; font-size:20px; font-weight:bold">{metric}</span></div>', unsafe_allow_html=True)
                         with p_col3:
-                            weights = getattr(models[model_key], 'weights', 'N/A')
+                            weights = getattr(active_model, 'weights', 'N/A')
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">⚖️ Weights:</span><br><span style="color:#667eea; font-size:20px; font-weight:bold">{weights}</span></div>', unsafe_allow_html=True)
 
+                    # ==========================================
                     # --- 2. Decision Tree Display ---
+                    # ==========================================
                     elif model_choice == "Decision Tree":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่預測 (Decision Tree)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (Decision Tree)</p>
                         </div>
                         """, unsafe_allow_html=True)
                         st.info("🌳 **Decision Tree** ตัดสินใจตามเงื่อนไขของ features แบบต้นไม้")
@@ -223,44 +262,50 @@ elif page == "🔮 ทำนายผล":
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
+                    # ==========================================
                     # --- 3. SVM Display ---
+                    # ==========================================
                     elif model_choice == "SVM":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่預測 (SVM)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (SVM)</p>
                         </div>
                         """, unsafe_allow_html=True)
                         st.info("⚡ **SVM** หาเส้นแบ่ง (Hyperplane) ที่แยก classes ได้ดีที่สุด")
                         if hasattr(models[model_key], 'decision_function'):
                             conf = models[model_key].decision_function(scaled_data)[0]
-                            st.markdown(f'<div class="param-box" style="text-align:center;"><span style="color:#95a5a6">🎯 Confidence Score:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{conf[0]:.4f}</span></div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🎯 Confidence Score:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{conf[0]:.4f}</span></div>', unsafe_allow_html=True)
 
+                    # ==========================================
                     # --- 4. Random Forest Display ---
+                    # ==========================================
                     elif model_choice == "Random Forest":
                         grade = classes[int(prediction[0])] if int(prediction[0]) < len(classes) else str(prediction[0])
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่預測 (Random Forest)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (Random Forest)</p>
                         </div>
                         """, unsafe_allow_html=True)
                         st.info("🌲 **Random Forest** โหวตผลลัพธ์จาก Decision Trees หลายร้อยต้น")
                         if hasattr(models[model_key], 'n_estimators'):
-                            st.markdown(f'<div class="param-box" style="text-align:center;"><span style="color:#95a5a6">🌳 จำนวน Trees:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{models[model_key].n_estimators}</span></div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🌳 จำนวน Trees:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{models[model_key].n_estimators}</span></div>', unsafe_allow_html=True)
                         if hasattr(models[model_key], 'feature_importances_'):
                             st.markdown("### 📊 ความสำคัญของ Features")
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
+                    # ==========================================
                     # --- 5. Linear Regression Display ---
+                    # ==========================================
                     elif model_choice == "Linear Regression":
                         score = prediction[0]
                         st.markdown(f"""
                         <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{score:.2f}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">คะแนนที่預測 (Linear Regression)</p each>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">คะแนนที่预测 (Linear Regression)</p>
                         </div>
                         """, unsafe_allow_html=True)
                         st.info("📈 **Linear Regression** ทำนายค่าตัวเลขต่อเนื่อง (คะแนน)")
@@ -288,8 +333,6 @@ elif page == "🔮 ทำนายผล":
                         </div>
                         """, unsafe_allow_html=True)
                     with m_col3:
-                        acc = models['info'].get('scores', {}).get(model_choice.split()[0] if model_choice != "Linear Regression" else "Linear Regression", 0.85)
-                        # Fix key mapping for accuracy display
                         acc_key = "KNN" if model_choice == "K-Nearest Neighbor" else model_choice
                         acc_val = models['info'].get('scores', {}).get(acc_key, 0.85)
                         st.markdown(f"""
