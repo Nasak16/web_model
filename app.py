@@ -15,24 +15,30 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ========== Custom CSS - Fixed Contrast ==========
+# ========== Custom CSS - Fixed ==========
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     
     * {
         font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
     }
     
     /* Hide default Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
     
-    /* Main background */
+    /* Main background - Dark */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        background: #0f172a !important;
         min-height: 100vh;
+    }
+    
+    /* Force ALL text to be visible */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label, .stApp span, .stApp div {
+        color: #ffffff !important;
     }
     
     /* Header Section */
@@ -51,7 +57,6 @@ st.markdown("""
         font-weight: 800;
         margin: 0;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        letter-spacing: -1px;
     }
     
     .header-section p {
@@ -59,81 +64,102 @@ st.markdown("""
         font-size: 1.3rem;
         margin-top: 0.5rem;
         font-weight: 400;
-        opacity: 1;
     }
     
-    /* Main container */
+    /* Main wrapper */
     .main-wrapper {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 2rem 3rem 2rem;
     }
     
-    /* Cards */
+    /* Cards - WHITE background */
     .card {
         background: #ffffff !important;
         border-radius: 24px;
         padding: 2.5rem;
         margin-bottom: 2rem;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        border: 1px solid #e2e8f0;
+        border: 2px solid #e2e8f0;
     }
     
-    .card-title {
+    /* Section titles - DARK color on white card */
+    .section-title-dark {
         font-size: 1.8rem;
-        font-weight: 700;
-        color: #1e293b !important;
+        font-weight: 800;
+        color: #0f172a !important;
         margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 4px solid #667eea;
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding-bottom: 1rem;
-        border-bottom: 3px solid #667eea;
     }
     
-    /* Input form styling */
+    .section-title-dark .emoji {
+        font-size: 2rem;
+    }
+    
+    /* Input section - Light gray background */
     .input-section {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: #f1f5f9 !important;
         padding: 2rem;
         border-radius: 20px;
         margin: 1.5rem 0;
-        border: 1px solid #e2e8f0;
+        border: 2px solid #cbd5e1;
     }
     
     .input-section h3 {
-        color: #1e293b !important;
-        font-weight: 600;
+        color: #0f172a !important;
+        font-weight: 700;
+        font-size: 1.3rem;
         margin-bottom: 1rem;
     }
     
-    .stNumberInput > div > div > input {
-        border-radius: 12px;
-        border: 2px solid #cbd5e1;
-        padding: 14px 16px;
+    /* Force number input text to be DARK and VISIBLE */
+    .stNumberInput label {
+        color: #0f172a !important;
+        font-weight: 600;
         font-size: 1rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        background: white;
-        color: #1e293b !important;
     }
     
-    .stNumberInput > div > div > input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        outline: none;
+    .stNumberInput input[type="number"] {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        border: 2px solid #94a3b8 !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+    }
+    
+    .stNumberInput input[type="number"]:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+    }
+    
+    /* Force selectbox text to be DARK */
+    .stSelectbox label {
+        color: #0f172a !important;
+        font-weight: 600;
+        font-size: 1rem;
     }
     
     .stSelectbox > div > div {
-        border-radius: 12px;
-        border: 2px solid #cbd5e1;
-        background: white;
-        transition: all 0.3s ease;
-        color: #1e293b !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 2px solid #94a3b8 !important;
+        border-radius: 12px !important;
+    }
+    
+    .stSelectbox > div > div > div {
+        color: #0f172a !important;
+        font-weight: 600;
     }
     
     /* Button */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         color: #ffffff !important;
         border: none;
         border-radius: 16px;
@@ -153,10 +179,6 @@ st.markdown("""
         box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
     }
     
-    .stButton > button:active {
-        transform: translateY(-1px);
-    }
-    
     /* Result box */
     .result-container {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -165,24 +187,6 @@ st.markdown("""
         text-align: center;
         margin: 2rem 0;
         box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .result-container::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: shimmer 3s infinite;
-    }
-    
-    @keyframes shimmer {
-        0%, 100% { transform: translate(0, 0); }
-        50% { transform: translate(30px, 30px); }
     }
     
     .result-label {
@@ -190,45 +194,33 @@ st.markdown("""
         font-size: 1.2rem;
         font-weight: 600;
         margin-bottom: 1rem;
-        position: relative;
-        z-index: 1;
     }
     
     .result-grade {
         color: #ffffff !important;
         font-size: 6rem;
-        font-weight: 800;
+        font-weight: 900;
         line-height: 1;
         margin: 1rem 0;
-        text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
-        position: relative;
-        z-index: 1;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
     }
     
     .result-model {
         color: #ffffff !important;
         font-size: 1rem;
         font-weight: 500;
-        position: relative;
-        z-index: 1;
     }
     
-    /* Metrics grid */
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
+    /* Metric items */
     .metric-item {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #ffffff !important;
-        padding: 1.5rem;
-        border-radius: 16px;
+        padding: 2rem 1.5rem;
+        border-radius: 20px;
         text-align: center;
         box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         transition: transform 0.3s ease;
+        height: 100%;
     }
     
     .metric-item:hover {
@@ -236,66 +228,55 @@ st.markdown("""
     }
     
     .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
+        font-size: 3rem;
+        font-weight: 900;
         margin-bottom: 0.5rem;
         color: #ffffff !important;
     }
     
     .metric-label {
-        font-size: 0.95rem;
-        opacity: 1;
-        font-weight: 500;
+        font-size: 1rem;
+        font-weight: 600;
         color: #ffffff !important;
+        opacity: 1;
     }
     
-    /* Probability chart */
+    /* Chart container */
     .chart-container {
-        background: white;
+        background: #ffffff !important;
         padding: 2rem;
         border-radius: 20px;
         margin-top: 2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 2px solid #e2e8f0;
     }
     
     .chart-container h3 {
-        color: #1e293b !important;
-        font-weight: 600;
-    }
-    
-    /* Info badges */
-    .badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #ffffff !important;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin: 0.25rem;
-    }
-    
-    /* Section divider */
-    .section-divider {
-        height: 2px;
-        background: linear-gradient(90deg, transparent 0%, #667eea 50%, transparent 100%);
-        margin: 2rem 0;
-        border: none;
+        color: #0f172a !important;
+        font-weight: 700;
     }
     
     /* Expander */
-    .streamlit-expanderHeader {
+    details {
         background: #ffffff !important;
-        color: #1e293b !important;
+        border-radius: 16px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border: 2px solid #e2e8f0;
+    }
+    
+    summary {
+        color: #0f172a !important;
+        font-weight: 700;
+        font-size: 1.1rem;
     }
     
     /* Responsive */
     @media (max-width: 768px) {
-        .header-section h1 { font-size: 2.5rem; }
+        .header-section h1 { font-size: 2.2rem; }
         .result-grade { font-size: 4rem; }
         .card { padding: 1.5rem; }
-        .metrics-grid { grid-template-columns: 1fr; }
+        .section-title-dark { font-size: 1.4rem; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -330,7 +311,7 @@ target_names = test_data['target_names']
 # ========== Header ==========
 st.markdown("""
 <div class="header-section">
-    <h1>🎓 AI Grade Predictor</h1>
+    <h1> AI Grade Predictor</h1>
     <p>ระบบทำนายเกรดนักเรียนด้วย Machine Learning อัจฉริยะ</p>
 </div>
 """, unsafe_allow_html=True)
@@ -338,9 +319,9 @@ st.markdown("""
 # ========== Main Content ==========
 st.markdown('<div class="main-wrapper">', unsafe_allow_html=True)
 
-# Quick Stats
+# ========== Quick Stats Card ==========
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="card-title"> ข้อมูลระบบ</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title-dark"><span class="emoji">📊</span> ข้อมูลระบบ</div>', unsafe_allow_html=True)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -374,9 +355,9 @@ with col4:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Prediction Section
+# ========== Prediction Card ==========
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="card-title"> ทำนายเกรดนักเรียน</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title-dark"><span class="emoji">🔮</span> ทำนายเกรดนักเรียน</div>', unsafe_allow_html=True)
 
 # แยก features
 numeric_features = [f for f in feature_names if '_' not in f]
@@ -394,18 +375,20 @@ with st.form("prediction_form", clear_on_submit=False):
     
     inputs = {}
     
-    # Numeric inputs
-    cols = st.columns(3)
+    # Numeric inputs - 2 columns for better visibility
+    cols = st.columns(2)
     for i, feat in enumerate(numeric_features):
-        with cols[i % 3]:
+        with cols[i % 2]:
             mean_val = float(np.mean(test_data['X_test'][:, feature_names.index(feat)]))
+            # ปัดเป็นทศนิยม 1 ตำแหน่งให้เห็นชัดเจน
+            default_val = round(mean_val, 1)
             inputs[feat] = st.number_input(
                 f"{feat.replace('_', ' ').title()}",
-                value=round(mean_val, 2),
-                step=0.1,
-                format="%.2f",
+                value=default_val,
+                step=0.5,
+                format="%.1f",
                 key=f"num_{feat}",
-                help=f"กรอกค่า {feat.replace('_', ' ')}"
+                help=f"ค่าเฉลี่ย: {default_val}"
             )
     
     # Categorical inputs
@@ -414,10 +397,11 @@ with st.form("prediction_form", clear_on_submit=False):
         cat_cols = st.columns(2)
         for i, (base_name, categories) in enumerate(categorical_features.items()):
             with cat_cols[i % 2]:
-                options = ['None'] + categories
+                options = categories if categories else ['Yes', 'No']
                 inputs[base_name] = st.selectbox(
                     base_name.replace('_', ' ').title(),
                     options,
+                    index=0,
                     key=f"cat_{base_name}"
                 )
     
@@ -432,7 +416,6 @@ if submitted:
     input_df = input_df.reindex(columns=feature_names, fill_value=0)
     input_scaled = scaler.transform(input_df)
     
-    # Use Random Forest or best available
     model_name = 'Random Forest' if 'Random Forest' in models else list(models.keys())[0]
     model = models[model_name]
     
@@ -453,7 +436,7 @@ if submitted:
         proba = model.predict_proba(input_scaled)[0]
         
         st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown("### 📊 ความน่าจะเป็นของแต่ละเกรด")
+        st.markdown("###  ความน่าจะเป็นของแต่ละเกรด")
         
         prob_df = pd.DataFrame({
             'Grade': target_names,
@@ -465,9 +448,9 @@ if submitted:
         bars = ax.barh(prob_df['Grade'], prob_df['Probability'], 
                        color=colors, height=0.5, edgecolor='white', linewidth=2)
         
-        ax.set_xlabel('ความน่าจะเป็น', fontsize=13, fontweight='600', color='#1e293b')
-        ax.set_title('ความน่าจะเป็นของแต่ละเกรด', fontsize=16, fontweight='700', 
-                    color='#1e293b', pad=20)
+        ax.set_xlabel('ความน่าจะเป็น', fontsize=13, fontweight='700', color='#0f172a')
+        ax.set_title('ความน่าจะเป็นของแต่ละเกรด', fontsize=16, fontweight='800', 
+                    color='#0f172a', pad=20)
         ax.grid(axis='x', alpha=0.3, linestyle='--')
         ax.set_xlim(0, 1)
         ax.spines['top'].set_visible(False)
@@ -475,7 +458,7 @@ if submitted:
         
         for i, (idx, row) in enumerate(prob_df.iterrows()):
             ax.text(row['Probability'] + 0.02, i, f"{row['Probability']:.1%}", 
-                   va='center', fontsize=12, fontweight='700', color='#1e293b')
+                   va='center', fontsize=12, fontweight='700', color='#0f172a')
         
         plt.tight_layout()
         st.pyplot(fig)
@@ -483,8 +466,8 @@ if submitted:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Model Selection Info
-with st.expander("ℹ️ เลือกดูโมเดลอื่นๆ", expanded=False):
+# ========== Model Info ==========
+with st.expander("️ เลือกดูโมเดลอื่นๆ"):
     st.markdown("### 🤖 โมเดลที่พร้อมใช้งาน")
     
     selected_model = st.selectbox("เลือกโมเดลเพื่อดูรายละเอียด", sorted(models.keys()))
@@ -499,19 +482,18 @@ with st.expander("ℹ️ เลือกดูโมเดลอื่นๆ", e
         with col2:
             st.metric("จำนวนข้อมูลทดสอบ", len(y_pred))
         
-        # Confusion Matrix
         cm = confusion_matrix(test_data['y_test'], y_pred)
         fig, ax = plt.subplots(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
                     xticklabels=target_names, yticklabels=target_names)
-        ax.set_title(f'Confusion Matrix - {selected_model}')
+        ax.set_title(f'Confusion Matrix - {selected_model}', color='#0f172a', fontweight='700')
         st.pyplot(fig)
 
 # Footer
 st.markdown("""
-<div style="text-align: center; color: #ffffff; padding: 2rem; margin-top: 2rem;">
-    <p style="font-size: 1rem; margin: 0; color: #ffffff !important;">Built with ❤️ using Streamlit + Machine Learning</p>
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9; color: #ffffff !important;">© 2024 AI Grade Predictor System</p>
+<div style="text-align: center; padding: 2rem; margin-top: 2rem;">
+    <p style="font-size: 1rem; margin: 0; color: #94a3b8;">Built with ❤️ using Streamlit + Machine Learning</p>
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #64748b;">© 2024 AI Grade Predictor System</p>
 </div>
 """, unsafe_allow_html=True)
 
