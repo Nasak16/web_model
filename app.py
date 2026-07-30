@@ -94,13 +94,13 @@ st.title(" Student Grade Prediction System")
 # Navigation
 page = st.sidebar.selectbox(
     "📌 เลือกหน้า",
-    ["👨‍💻 ข้อมูลผู้พัฒนา", "🔮 ทำนายผล", "📊 เปรียบเทียบโมเดล", "🔵 K-Means Clustering", "📈 ข้อมูลโมเดล"]
+    ["👨‍ ข้อมูลผู้พัฒนา", "🔮 ทำนายผล", "📊 เปรียบเทียบโมเดล", "🔵 K-Means Clustering", "📈 ข้อมูลโมเดล"]
 )
 
 # ============================================
 # หน้า 1: ข้อมูลผู้พัฒนา
 # ============================================
-if page == "‍💻 ข้อมูลผู้พัฒนา":
+if page == "👨‍💻 ข้อมูลผู้พัฒนา":
     show_developer_info()
     st.markdown("---")
     st.markdown("### 📋 เกี่ยวกับโปรเจค")
@@ -114,7 +114,7 @@ if page == "‍💻 ข้อมูลผู้พัฒนา":
 # ============================================
 # หน้า 2: ทำนายผล
 # ============================================
-elif page == "🔮 ทำนายผล":
+elif page == " ทำนายผล":
     st.markdown("### 🎯 ทำนายเกรดด้วยโมเดลต่างๆ")
     model_choice = st.selectbox("เลือกโมเดล", ["K-Nearest Neighbor", "Decision Tree", "SVM", "Random Forest", "Linear Regression"])
     
@@ -122,8 +122,8 @@ elif page == "🔮 ทำนายผล":
     with col1:
         student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1)
         gender = st.selectbox("👤 Gender", ["Male", "Female"])
-        study_time_hours = st.number_input(" Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
-        attendance_percent = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
+        study_time_hours = st.number_input("⏰ Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
+        attendance_percent = st.number_input(" Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5)
         parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"])
     with col2:
@@ -133,7 +133,7 @@ elif page == "🔮 ทำนายผล":
         previous_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=88.5, step=0.1)
         final_exam_score = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=92.0, step=0.1)
     
-    if st.button("🔮 ทำนายผล", use_container_width=True):
+    if st.button(" ทำนายผล", use_container_width=True):
         input_data = pd.DataFrame({
             'student_id': [student_id], 'gender': [gender], 'study_time_hours': [study_time_hours],
             'attendance_percent': [attendance_percent], 'sleep_hours': [sleep_hours],
@@ -172,9 +172,9 @@ elif page == "🔮 ทำนายผล":
                     if model_choice == "K-Nearest Neighbor":
                         current_k = getattr(models['knn'], 'n_neighbors', 5)
                         
-                        st.markdown("### ️ ตั้งค่าพารามิเตอร์ KNN")
+                        st.markdown("### ⚙️ ตั้งค่าพารามิเตอร์ KNN")
                         k_value = st.slider(
-                            " เลือกจำนวน K (Neighbors)",
+                            "🔢 เลือกจำนวน K (Neighbors)",
                             min_value=1,
                             max_value=20,
                             value=current_k,
@@ -205,7 +205,7 @@ elif page == "🔮 ทำนายผล":
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (K-Nearest Neighbor, K={k_value})</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่ทำนาย (K-Nearest Neighbor, K={k_value})</p>
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -244,7 +244,7 @@ elif page == "🔮 ทำนายผล":
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (Decision Tree)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่ทำนาย (Decision Tree)</p>
                         </div>
                         """, unsafe_allow_html=True)
                         st.info("🌳 **Decision Tree** ตัดสินใจตามเงื่อนไขของ features แบบต้นไม้")
@@ -259,10 +259,10 @@ elif page == "🔮 ทำนายผล":
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (SVM)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่ทำนาย (SVM)</p>
                         </div>
                         """, unsafe_allow_html=True)
-                        st.info(" **SVM** หาเส้นแบ่ง (Hyperplane) ที่แยก classes ได้ดีที่สุด")
+                        st.info("⚡ **SVM** หาเส้นแบ่ง (Hyperplane) ที่แยก classes ได้ดีที่สุด")
                         if hasattr(models[model_key], 'decision_function'):
                             conf = models[model_key].decision_function(scaled_data)[0]
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🎯 Confidence Score:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{conf[0]:.4f}</span></div>', unsafe_allow_html=True)
@@ -273,10 +273,10 @@ elif page == "🔮 ทำนายผล":
                         st.markdown(f"""
                         <div class="metric-card grade-{grade}" style="padding: 40px; text-align: center; border-radius: 15px;">
                             <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{grade}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่预测 (Random Forest)</p>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">เกรดที่ทำนาย (Random Forest)</p>
                         </div>
                         """, unsafe_allow_html=True)
-                        st.info(" **Random Forest** โหวตผลลัพธ์จาก Decision Trees หลายร้อยต้น")
+                        st.info("🌲 **Random Forest** โหวตผลลัพธ์จาก Decision Trees หลายร้อยต้น")
                         if hasattr(models[model_key], 'n_estimators'):
                             st.markdown(f'<div class="param-box"><span style="color:#95a5a6">🌳 จำนวน Trees:</span><br><span style="color:#667eea; font-size:24px; font-weight:bold">{models[model_key].n_estimators}</span></div>', unsafe_allow_html=True)
                         if hasattr(models[model_key], 'feature_importances_'):
@@ -284,18 +284,35 @@ elif page == "🔮 ทำนายผล":
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
-                    # --- 5. Linear Regression Display ---
+                    # --- 5. Linear Regression Display (แก้ไขแล้ว) ---
                     elif model_choice == "Linear Regression":
-                        score = prediction[0]
+                        raw_score = prediction[0]
+                        
+                        # ตรวจสอบว่าเป็นค่าที่ Encode มาจากเกรด (0-4) หรือเป็นคะแนนจริง (0-100)
+                        if raw_score < 5: 
+                            # แปลงค่า 0-4 กลับเป็นช่วงคะแนนโดยประมาณ
+                            # 0=A(95), 1=B(85), 2=C(75), 3=D(65), 4=F(50)
+                            nearest_idx = int(round(raw_score))
+                            nearest_idx = max(0, min(nearest_idx, len(classes)-1))
+                            
+                            score_mapping = {'A': 95, 'B': 85, 'C': 75, 'D': 65, 'F': 50}
+                            estimated_score = score_mapping.get(classes[nearest_idx], 75)
+                            
+                            display_score = float(estimated_score)
+                            st.info("⚠️ หมายเหตุ: โมเดลนี้ทำนายจากระดับเกรดที่แปลงเป็นตัวเลข ระบบจึงประมาณค่าเป็นช่วงคะแนนให้")
+                        else:
+                            display_score = raw_score
+
                         st.markdown(f"""
                         <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 15px;">
-                            <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{score:.2f}</h1>
-                            <p style="color: white; margin: 10px 0; font-size: 18px;">คะแนนที่预测 (Linear Regression)</p>
+                            <h1 style="color: white; margin: 0; font-size: 96px; font-weight: bold;">{display_score:.2f}</h1>
+                            <p style="color: white; margin: 10px 0; font-size: 18px;">คะแนนที่ทำนาย (Linear Regression)</p>
                         </div>
                         """, unsafe_allow_html=True)
+                        
                         st.info("📈 **Linear Regression** ทำนายค่าตัวเลขต่อเนื่อง (คะแนน)")
                         if hasattr(models[model_key], 'coef_'):
-                            st.markdown("### 📊 สัมประสิทธิ์ (Coefficients)")
+                            st.markdown("###  สัมประสิทธิ์ (Coefficients)")
                             coef_df = pd.DataFrame({'Feature': feature_names, 'Coefficient': models[model_key].coef_})
                             st.dataframe(coef_df, use_container_width=True)
 
@@ -331,7 +348,7 @@ elif page == "🔮 ทำนายผล":
                 else:
                     st.error(f"⚠️ ไม่พบโมเดล {model_choice}")
             except Exception as e:
-                st.error(f"️ เกิดข้อผิดพลาด: {str(e)}")
+                st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
         else:
             st.error("⚠️ ไม่พบไฟล์โมเดล กรุณาตรวจสอบโฟลเดอร์ models/")
 
@@ -342,10 +359,10 @@ elif page == "📊 เปรียบเทียบโมเดล":
     st.markdown("### 🔍 เปรียบเทียบผลลัพธ์จากทุกโมเดล")
     col1, col2 = st.columns(2)
     with col1:
-        student_id = st.number_input(" Student ID", min_value=0, value=1001, step=1, key='c_id')
-        gender = st.selectbox(" Gender", ["Male", "Female"], key='c_g')
-        study_time_hours = st.number_input("⏰ Study Time", min_value=0.0, max_value=12.0, value=6.5, step=0.5, key='c_st')
-        attendance_percent = st.number_input(" Attendance %", min_value=0.0, max_value=100.0, value=95.0, step=1.0, key='c_att')
+        student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1, key='c_id')
+        gender = st.selectbox("👤 Gender", ["Male", "Female"], key='c_g')
+        study_time_hours = st.number_input(" Study Time", min_value=0.0, max_value=12.0, value=6.5, step=0.5, key='c_st')
+        attendance_percent = st.number_input("📊 Attendance %", min_value=0.0, max_value=100.0, value=95.0, step=1.0, key='c_att')
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='c_sl')
         parental_education = st.selectbox(" Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"], key='c_pe')
     with col2:
@@ -386,7 +403,15 @@ elif page == "📊 เปรียบเทียบโมเดล":
                             classes = models['info'].get('classes', ['A', 'B', 'C', 'D', 'F'])
                             res = classes[int(pred)] if int(pred) < len(classes) else str(pred)
                         else:
-                            res = f"{pred:.2f}"
+                            # สำหรับ Linear Regression ใช้ logic เดียวกัน
+                            raw_score = pred
+                            if raw_score < 5:
+                                nearest_idx = int(round(raw_score))
+                                nearest_idx = max(0, min(nearest_idx, len(classes)-1))
+                                score_mapping = {'A': 95, 'B': 85, 'C': 75, 'D': 65, 'F': 50}
+                                res = f"{score_mapping.get(classes[nearest_idx], 75):.2f}"
+                            else:
+                                res = f"{raw_score:.2f}"
                         results.append({'Model': model_name, 'Prediction': res, 'Time': f"{exec_time:.4f}s"})
                 
                 st.markdown("---")
@@ -404,10 +429,10 @@ elif page == "📊 เปรียบเทียบโมเดล":
                         """, unsafe_allow_html=True)
                 
                 st.markdown("---")
-                st.markdown("### 📋 ตารางเปรียบเทียบ")
+                st.markdown("###  ตารางเปรียบเทียบ")
                 st.dataframe(pd.DataFrame(results), use_container_width=True)
             except Exception as e:
-                st.error(f"️ เกิดข้อผิดพลาด: {str(e)}")
+                st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
 
 # ============================================
 # หน้า 4: K-Means Clustering (แก้ไขแล้ว)
@@ -465,13 +490,11 @@ elif page == "🔵 K-Means Clustering":
             if hasattr(models['kmeans'], 'cluster_centers_'):
                 st.markdown("### 📊 ลักษณะค่าเฉลี่ยของแต่ละ Cluster")
                 
-                # สร้าง DataFrame จาก cluster centers (ใช้ feature_names ครบทุกคอลัมน์)
                 centers_df = pd.DataFrame(
                     models['kmeans'].cluster_centers_, 
                     columns=feature_names
                 )
                 
-                # แสดงตาราง (เลือกเฉพาะคอลัมน์ตัวเลขหลัก)
                 numeric_cols = ['study_time_hours', 'attendance_percent', 'sleep_hours', 
                                'previous_grade', 'final_exam_score']
                 display_centers = centers_df[numeric_cols].copy()
@@ -479,7 +502,6 @@ elif page == "🔵 K-Means Clustering":
                                           'Previous Grade', 'Final Exam']
                 st.dataframe(display_centers, use_container_width=True)
                 
-                # Visualization (ใช้ centers_df ที่มีคอลัมน์ครบ)
                 try:
                     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
                     
