@@ -58,9 +58,9 @@ def show_developer_info():
         else:
             st.image("https://via.placeholder.com/200x200.png?text=Profile+Picture", width=200)
     with col2:
-        name = st.text_input("ชื่อ-นามสกุล", "นาย สมชาย ใจดี")
-        student_id = st.text_input("รหัสนักศึกษา", "6501234567")
-        group = st.text_input("หมู่เรียน", "CS-2A")
+        name = st.text_input("ชื่อ-นามสกุล", "นาย ณศักดิ์ ฉายแสงรัตน์")
+        student_id = st.text_input("รหัสนักศึกษา", "664245007")
+        group = st.text_input("หมู่เรียน", "66/43")
         st.markdown(f"""
         <div class="developer-card">
             <h2 style="color: white; margin: 0;">{name}</h2>
