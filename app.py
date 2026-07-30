@@ -89,12 +89,12 @@ def load_models():
     return models
 
 models = load_models()
-st.title(" Student Grade Prediction System")
+st.title("🎓 Student Grade Prediction System")
 
 # Navigation
 page = st.sidebar.selectbox(
     "📌 เลือกหน้า",
-    ["👨‍ ข้อมูลผู้พัฒนา", "🔮 ทำนายผล", "📊 เปรียบเทียบโมเดล", "🔵 K-Means Clustering", "📈 ข้อมูลโมเดล"]
+    ["👨‍💻 ข้อมูลผู้พัฒนา", "🔮 ทำนายผล", "📊 เปรียบเทียบโมเดล", "🔵 K-Means Clustering", "📈 ข้อมูลโมเดล"]
 )
 
 # ============================================
@@ -114,7 +114,7 @@ if page == "👨‍💻 ข้อมูลผู้พัฒนา":
 # ============================================
 # หน้า 2: ทำนายผล
 # ============================================
-elif page == " ทำนายผล":
+elif page == "🔮 ทำนายผล":
     st.markdown("### 🎯 ทำนายเกรดด้วยโมเดลต่างๆ")
     model_choice = st.selectbox("เลือกโมเดล", ["K-Nearest Neighbor", "Decision Tree", "SVM", "Random Forest", "Linear Regression"])
     
@@ -123,7 +123,7 @@ elif page == " ทำนายผล":
         student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1)
         gender = st.selectbox("👤 Gender", ["Male", "Female"])
         study_time_hours = st.number_input("⏰ Study Time (hours/day)", min_value=0.0, max_value=12.0, value=6.5, step=0.5)
-        attendance_percent = st.number_input(" Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
+        attendance_percent = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=95.0, step=1.0)
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5)
         parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"])
     with col2:
@@ -133,7 +133,7 @@ elif page == " ทำนายผล":
         previous_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=88.5, step=0.1)
         final_exam_score = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=92.0, step=0.1)
     
-    if st.button(" ทำนายผล", use_container_width=True):
+    if st.button("🔮 ทำนายผล", width='stretch'):
         input_data = pd.DataFrame({
             'student_id': [student_id], 'gender': [gender], 'study_time_hours': [study_time_hours],
             'attendance_percent': [attendance_percent], 'sleep_hours': [sleep_hours],
@@ -143,7 +143,7 @@ elif page == " ทำนายผล":
         })
         
         st.markdown("### 📋 ข้อมูลที่กรอก")
-        st.dataframe(input_data, use_container_width=True)
+        st.dataframe(input_data, width='stretch')
         
         if models and 'scaler' in models:
             try:
@@ -284,20 +284,15 @@ elif page == " ทำนายผล":
                             imp_df = pd.DataFrame({'Feature': feature_names, 'Importance': models[model_key].feature_importances_}).sort_values('Importance', ascending=True)
                             st.bar_chart(imp_df.set_index('Feature'))
 
-                    # --- 5. Linear Regression Display (แก้ไขแล้ว) ---
+                    # --- 5. Linear Regression Display ---
                     elif model_choice == "Linear Regression":
                         raw_score = prediction[0]
                         
-                        # ตรวจสอบว่าเป็นค่าที่ Encode มาจากเกรด (0-4) หรือเป็นคะแนนจริง (0-100)
                         if raw_score < 5: 
-                            # แปลงค่า 0-4 กลับเป็นช่วงคะแนนโดยประมาณ
-                            # 0=A(95), 1=B(85), 2=C(75), 3=D(65), 4=F(50)
                             nearest_idx = int(round(raw_score))
                             nearest_idx = max(0, min(nearest_idx, len(classes)-1))
-                            
                             score_mapping = {'A': 95, 'B': 85, 'C': 75, 'D': 65, 'F': 50}
                             estimated_score = score_mapping.get(classes[nearest_idx], 75)
-                            
                             display_score = float(estimated_score)
                             st.info("⚠️ หมายเหตุ: โมเดลนี้ทำนายจากระดับเกรดที่แปลงเป็นตัวเลข ระบบจึงประมาณค่าเป็นช่วงคะแนนให้")
                         else:
@@ -312,9 +307,9 @@ elif page == " ทำนายผล":
                         
                         st.info("📈 **Linear Regression** ทำนายค่าตัวเลขต่อเนื่อง (คะแนน)")
                         if hasattr(models[model_key], 'coef_'):
-                            st.markdown("###  สัมประสิทธิ์ (Coefficients)")
+                            st.markdown("### 📊 สัมประสิทธิ์ (Coefficients)")
                             coef_df = pd.DataFrame({'Feature': feature_names, 'Coefficient': models[model_key].coef_})
-                            st.dataframe(coef_df, use_container_width=True)
+                            st.dataframe(coef_df, width='stretch')
 
                     # Bottom Metrics Cards
                     st.markdown("---")
@@ -361,18 +356,18 @@ elif page == "📊 เปรียบเทียบโมเดล":
     with col1:
         student_id = st.number_input("🆔 Student ID", min_value=0, value=1001, step=1, key='c_id')
         gender = st.selectbox("👤 Gender", ["Male", "Female"], key='c_g')
-        study_time_hours = st.number_input(" Study Time", min_value=0.0, max_value=12.0, value=6.5, step=0.5, key='c_st')
+        study_time_hours = st.number_input("⏰ Study Time", min_value=0.0, max_value=12.0, value=6.5, step=0.5, key='c_st')
         attendance_percent = st.number_input("📊 Attendance %", min_value=0.0, max_value=100.0, value=95.0, step=1.0, key='c_att')
         sleep_hours = st.number_input("😴 Sleep Hours", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='c_sl')
-        parental_education = st.selectbox(" Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"], key='c_pe')
+        parental_education = st.selectbox("🎓 Parental Education", ["None", "High School", "Bachelors", "Masters", "PhD"], key='c_pe')
     with col2:
-        internet_access = st.selectbox(" Internet Access", ["Yes", "No"], key='c_ia')
+        internet_access = st.selectbox("🌐 Internet Access", ["Yes", "No"], key='c_ia')
         extracurricular_activities = st.selectbox("🎯 Extracurricular", ["Yes", "No"], key='c_ea')
         part_time_job = st.selectbox("💼 Part-time Job", ["Yes", "No"], key='c_pt')
         previous_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=88.5, step=0.1, key='c_pg')
         final_exam_score = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=92.0, step=0.1, key='c_fe')
     
-    if st.button("🔍 เปรียบเทียบทุกโมเดล", use_container_width=True):
+    if st.button("🔍 เปรียบเทียบทุกโมเดล", width='stretch'):
         input_data = pd.DataFrame({
             'student_id': [student_id], 'gender': [gender], 'study_time_hours': [study_time_hours],
             'attendance_percent': [attendance_percent], 'sleep_hours': [sleep_hours],
@@ -403,7 +398,6 @@ elif page == "📊 เปรียบเทียบโมเดล":
                             classes = models['info'].get('classes', ['A', 'B', 'C', 'D', 'F'])
                             res = classes[int(pred)] if int(pred) < len(classes) else str(pred)
                         else:
-                            # สำหรับ Linear Regression ใช้ logic เดียวกัน
                             raw_score = pred
                             if raw_score < 5:
                                 nearest_idx = int(round(raw_score))
@@ -429,17 +423,20 @@ elif page == "📊 เปรียบเทียบโมเดล":
                         """, unsafe_allow_html=True)
                 
                 st.markdown("---")
-                st.markdown("###  ตารางเปรียบเทียบ")
-                st.dataframe(pd.DataFrame(results), use_container_width=True)
+                st.markdown("### 📋 ตารางเปรียบเทียบ")
+                st.dataframe(pd.DataFrame(results), width='stretch')
             except Exception as e:
                 st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
 
 # ============================================
-# หน้า 4: K-Means Clustering (แก้ไขแล้ว)
+# หน้า 4: K-Means Clustering (แก้ไขสมบูรณ์)
 # ============================================
 elif page == "🔵 K-Means Clustering":
     st.markdown("### 🔵 K-Means Clustering - จัดกลุ่มนักเรียน")
     if 'kmeans' in models:
+        # ✅ แก้ไข: ย้ายมาไว้ด้านบนสุดของบล็อก เพื่อให้ทั้งปุ่มและส่วนอัพโหลดเรียกใช้ได้
+        feature_names = models['info'].get('feature_names', [])
+        
         st.markdown("กรอกข้อมูลหลักเพื่อประเมินการจัดกลุ่ม (ระบบจะเติมข้อมูลอื่นๆ ให้โดยอัตโนมัติ)")
         col1, col2 = st.columns(2)
         with col1:
@@ -447,12 +444,12 @@ elif page == "🔵 K-Means Clustering":
             attendance = st.number_input("📊 Attendance (%)", min_value=0.0, max_value=100.0, value=85.0, step=1.0, key='km_att')
             sleep = st.number_input("😴 Sleep Hours (ชม./วัน)", min_value=0.0, max_value=12.0, value=7.0, step=0.5, key='km_sl')
         with col2:
-            prev_grade = st.number_input(" Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
+            prev_grade = st.number_input("📚 Previous Grade", min_value=0.0, max_value=100.0, value=75.0, step=0.1, key='km_pg')
             final_exam = st.number_input("📝 Final Exam Score", min_value=0.0, max_value=100.0, value=80.0, step=0.1, key='km_fe')
             st.markdown("### 🎯 จำนวน Cluster")
             n_clusters = st.slider("เลือกจำนวนกลุ่ม", 2, 5, 3)
         
-        if st.button(" จัดกลุ่มข้อมูล", use_container_width=True):
+        if st.button("🔵 จัดกลุ่มข้อมูล", width='stretch'):
             with st.spinner('กำลังประมวลผล...'):
                 input_dict = {
                     'student_id': [1],
@@ -470,7 +467,6 @@ elif page == "🔵 K-Means Clustering":
                 input_df = pd.DataFrame(input_dict)
                 input_processed = pd.get_dummies(input_df, drop_first=True)
                 
-                feature_names = models['info'].get('feature_names', [])
                 for col in feature_names:
                     if col not in input_processed.columns:
                         input_processed[col] = 0
@@ -497,11 +493,16 @@ elif page == "🔵 K-Means Clustering":
                 
                 numeric_cols = ['study_time_hours', 'attendance_percent', 'sleep_hours', 
                                'previous_grade', 'final_exam_score']
-                display_centers = centers_df[numeric_cols].copy()
-                display_centers.columns = ['Study Time', 'Attendance', 'Sleep', 
-                                          'Previous Grade', 'Final Exam']
-                st.dataframe(display_centers, use_container_width=True)
+                # กรองเฉพาะคอลัมน์ที่มีอยู่จริง
+                available_numeric_cols = [col for col in numeric_cols if col in centers_df.columns]
                 
+                if available_numeric_cols:
+                    display_centers = centers_df[available_numeric_cols].copy()
+                    display_centers.columns = ['Study Time', 'Attendance', 'Sleep', 
+                                              'Previous Grade', 'Final Exam'][:len(available_numeric_cols)]
+                    st.dataframe(display_centers, width='stretch')
+                
+                # ✅ แก้ไข: ใช้ centers_df (ชื่อเดิม) แทน centers (ชื่อที่เปลี่ยนแล้ว) เพื่อป้องกัน KeyError
                 try:
                     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
                     
@@ -531,12 +532,13 @@ elif page == "🔵 K-Means Clustering":
         uploaded_file = st.file_uploader("เลือกไฟล์ Excel/CSV", type=['xlsx', 'csv'])
         if uploaded_file:
             df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-            st.dataframe(df.head())
+            st.dataframe(df.head(), width='stretch')
             
             target_col = models['info'].get('target_column', df.columns[-1])
             X_upload = df.drop(columns=[target_col], errors='ignore')
             X_upload_processed = pd.get_dummies(X_upload, drop_first=True)
             
+            # ✅ แก้ไข: feature_names ถูกประกาศไว้ด้านบนแล้ว จึงเรียกใช้ได้ไม่มี Error
             for col in feature_names:
                 if col not in X_upload_processed.columns:
                     X_upload_processed[col] = 0
@@ -545,7 +547,7 @@ elif page == "🔵 K-Means Clustering":
             labels = models['kmeans'].predict(X_upload_processed)
             df['Cluster'] = labels
             st.markdown("### 📊 ผลการจัดกลุ่ม")
-            st.dataframe(df)
+            st.dataframe(df, width='stretch')
     else:
         st.error("⚠️ ไม่พบไฟล์ kmeans_model.pkl")
 
@@ -569,7 +571,7 @@ elif page == "📈 ข้อมูลโมเดล":
             ax.set_xlim([0, 1])
             ax.set_title('Model Performance')
             st.pyplot(fig)
-            st.dataframe(scores_df, use_container_width=True)
+            st.dataframe(scores_df, width='stretch')
         if info.get('classes'):
             st.markdown("### 🎓 Classes")
             st.write(info['classes'])
